@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}我的 — {{ SHOP_NAME }}{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index') }}">返回</a>
+  <span class="subbar-title">我的</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+<div class="sheet plain">
+  <h1 class="page-h1">{{ SHOP_NAME }}</h1>
+  <p class="muted-p">{{ SHOP_ADDRESS }}</p>
+  <div class="mine-cards">
+    <div class="mine-card">
+      <div class="mine-k">客服微信</div>
+      <div class="mine-v mono">（请在此处替换为你的微信号）</div>
+    </div>
+    <div class="mine-card">
+      <div class="mine-k">配送范围</div>
+      <div class="mine-v">全城预约配送，具体时段以支付后短信为准。</div>
+    </div>
+  </div>
+  <a class="btn-block" href="{{ url_for('index', tab='menu') }}#menu">去点单</a>
+</div>
+{% endblock %}

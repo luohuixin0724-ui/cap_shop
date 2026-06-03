@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ SHOP_NAME }} — 点单{% endblock %}
+{% block body %}
+<div id="top" class="shop-hero">
+  <div class="shop-title-row">
+    <div>
+      <h1 class="shop-name">{{ SHOP_NAME }}</h1>
+      <p class="shop-addr">{{ SHOP_ADDRESS }}</p>
+      <p class="shop-tip">{{ SHOP_NOTICE }}</p>
+    </div>
+  </div>
+
+  <div class="promo-row">
+    <a class="promo-card" href="{{ url_for('product_detail', pid=custom_product.id) }}">
+      <div>
+        <div class="promo-kicker">定制专区</div>
+        <div class="promo-title">私人定制 · {{ CUSTOM_PRICE }} 元</div>
+        <div class="promo-sub">提前 {{ CUSTOM_LEAD_DAYS }} 天发图 · 确认后制作配送</div>
+      </div>
+      <span class="promo-go">去下单</span>
+    </a>
+    <div class="promo-card muted">
+      <div>
+        <div class="promo-kicker">租借说明</div>
+        <div class="promo-title">¥{{ RENT_PER_DAY }}/天 + ¥{{ DEPOSIT_PER_UNIT }} 押金</div>
+        <div class="promo-sub">可选日期 · 填写收货地址 · 上门送达</div>
+      </div>
+      <span class="promo-go ghost">了解</span>
+    </div>
+  </div>
+</div>
+
+<section class="sig-section" aria-label="招牌推荐">
+  <div class="sec-head">
+    <h2>招牌</h2>
+    <span class="sec-more">向左滑</span>
+  </div>
+  <div class="sig-scroll">
+    {% for p in signature %}
+    {% set iv = inv_map.get(p.id, {}) %}
+    <a class="sig-card" href="{{ url_for('product_detail', pid=p.id) }}">
+      <div class="sig-img"><img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy" width="120" height="120" /></div>
+      <div class="sig-name">{{ p.name }}</div>
+      <div class="sig-price">¥{{ RENT_PER_DAY }}/天起</div>
+      <div class="sig-meta inv-sig" data-pid="{{ p.id }}">余 {{ iv.remaining_hint or 0 }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<div id="menu" class="menu-split">
+  <aside class="cat-rail" aria-label="分类">
+    {% for c in CATEGORIES %}
+    <a class="cat-link {% if loop.first %}active{% endif %}" href="#cat-{{ c.id }}" data-cat="{{ c.id }}">{{ c.name }}</a>
+    {% endfor %}
+  </aside>
+
+  <div class="menu-feed">
+    {% for cat, plist in grouped %}
+    <section class="cat-block" id="cat-{{ cat.id }}" data-cat-panel="{{ cat.id }}">
+      <header class="cat-title">{{ cat.name }}</header>
+      {% for p in plist %}
+      {% set iv = inv_map.get(p.id, {}) %}
+      <a class="sku-row" href="{{ url_for('product_detail', pid=p.id) }}" data-pid="{{ p.id }}">
+        <div class="sku-thumb">
+          <img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy" width="88" height="88" />
+        </div>
+        <div class="sku-main">
+          <div class="sku-tags">
+            {% for t in p.tags or [] %}
+            <span class="tag">{{ t }}</span>
+            {% endfor %}
+          </div>
+          <div class="sku-name">{{ p.name }}</div>
+          <div class="sku-desc">{{ p.desc }}</div>
+          <div class="sku-foot">
+            <span class="sku-sales">月订 {{ p.monthly_sales }}+</span>
+            <span class="sku-price">¥{{ RENT_PER_DAY }}/天</span>
+          </div>
+          <div class="sku-stock sku-line">
+            库存 <span class="mono-strong" data-k="total">{{ iv.total or 0 }}</span>
+            · 已订峰值 <span class="mono-strong" data-k="peak">{{ iv.peak_booked or 0 }}</span>
+            · 余 <span class="mono-strong" data-k="rem">{{ iv.remaining_hint or 0 }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </section>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  (function () {
+    const rail = document.querySelector(".cat-rail");
+    const panels = Array.from(document.querySelectorAll(".cat-block"));
+    if (!rail || !panels.length) return;
+
+    const links = Array.from(rail.querySelectorAll(".cat-link"));
+
+    function setActive(id) {
+      links.forEach((a) => a.classList.toggle("active", a.dataset.cat === id));
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting && en.intersectionRatio > 0.25) {
+            const id = en.target.getAttribute("data-cat-panel");
+            if (id) setActive(id);
+          }
+        });
+      },
+      { threshold: [0.25, 0.45] }
+    );
+    panels.forEach((p) => io.observe(p));
+
+    links.forEach((a) => {
+      a.addEventListener("click", (e) => {
+        const id = a.dataset.cat;
+        const target = document.getElementById("cat-" + id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ block: "start", behavior: "smooth" });
+          setActive(id);
+        }
+      });
+    });
+
+    async function tickInv() {
+      try {
+        const res = await fetch("{{ url_for('api_inventory') }}", { cache: "no-store" });
+        const data = await res.json();
+        const map = {};
+        (data.items || []).forEach((x) => (map[x.id] = x));
+        document.querySelectorAll(".inv-sig[data-pid]").forEach((el) => {
+          const it = map[el.dataset.pid];
+          if (!it || it.type !== "rental") return;
+          el.textContent = "余 " + (it.remaining_hint ?? 0);
+        });
+        document.querySelectorAll(".sku-row[data-pid]").forEach((row) => {
+          const it = map[row.dataset.pid];
+          if (!it || it.type !== "rental") return;
+          const line = row.querySelector(".sku-line");
+          if (!line) return;
+          const t = line.querySelector('[data-k="total"]');
+          const pk = line.querySelector('[data-k="peak"]');
+          const r = line.querySelector('[data-k="rem"]');
+          if (t) t.textContent = it.total ?? 0;
+          if (pk) pk.textContent = it.peak_booked ?? 0;
+          if (r) r.textContent = it.remaining_hint ?? 0;
+        });
+      } catch (err) {}
+    }
+    setInterval(tickInv, 4000);
+  })();
+</script>
+
+<script>
+  (function () {
+    const tab = new URLSearchParams(location.search).get("tab") || "menu";
+    if (tab === "menu") {
+      requestAnimationFrame(() => document.getElementById("menu")?.scrollIntoView({ behavior: "auto", block: "start" }));
+    } else {
+      requestAnimationFrame(() => document.getElementById("top")?.scrollIntoView({ behavior: "auto", block: "start" }));
+    }
+  })();
+</script>
+{% endblock %}

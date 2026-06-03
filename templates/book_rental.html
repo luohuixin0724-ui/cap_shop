@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — 预定{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <span class="subbar-title">填写预定</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+<section class="detail-hero">
+  <div class="detail-img">
+    <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" width="280" height="280" />
+  </div>
+  <div class="detail-text">
+    <h1 class="detail-name">{{ product.name }}</h1>
+    <p class="detail-desc">{{ product.desc }}</p>
+    <div class="detail-price">¥{{ RENT_PER_DAY }}/天 · 押金 ¥{{ DEPOSIT_PER_UNIT }}/顶</div>
+    <p class="detail-inv inv-line" data-inv-inline>
+      库存 <strong>{{ inv.total or 0 }}</strong> · 已订峰值 <strong>{{ inv.peak_booked or 0 }}</strong> · 余 <strong>{{ inv.remaining_hint or 0 }}</strong>
+    </p>
+  </div>
+</section>
+
+<div class="sheet">
+  <h2 class="sheet-title">租借信息</h2>
+  <form method="post" action="{{ url_for('book_rental') }}">
+    <input type="hidden" name="product_id" value="{{ product.id }}" />
+    <div class="form-row">
+      <label for="start_date">租借开始</label>
+      <input type="date" id="start_date" name="start_date" required min="{{ today_iso }}" />
+      <span class="hint">按自然日计费，含首尾两天。</span>
+    </div>
+    <div class="form-row">
+      <label for="end_date">租借结束</label>
+      <input type="date" id="end_date" name="end_date" required min="{{ today_iso }}" />
+    </div>
+    <div class="form-row">
+      <label for="quantity">数量（顶）</label>
+      <input type="number" id="quantity" name="quantity" min="1" max="10" value="1" required />
+    </div>
+    <div class="form-row">
+      <label for="customer_name">收货人姓名</label>
+      <input type="text" id="customer_name" name="customer_name" required />
+    </div>
+    <div class="form-row">
+      <label for="phone">手机号</label>
+      <input type="tel" id="phone" name="phone" required />
+    </div>
+    <div class="form-row">
+      <label for="address">收货地址（送货上门）</label>
+      <textarea id="address" name="address" required placeholder="省市区 + 详细门牌"></textarea>
+    </div>
+    <div class="form-row">
+      <label for="location_note">送达说明（可选）</label>
+      <input type="text" id="location_note" name="location_note" placeholder="校区/校门/楼栋等" />
+    </div>
+    <button class="btn-block" type="submit">提交订单并支付</button>
+  </form>
+</div>
+
+<script>
+  (function () {
+    const pid = "{{ product.id }}";
+    const line = document.querySelector("[data-inv-inline]");
+    async function tick() {
+      try {
+        const res = await fetch("{{ url_for('api_inventory') }}", { cache: "no-store" });
+        const data = await res.json();
+        const item = (data.items || []).find((x) => x.id === pid);
+        if (!item || !line) return;
+        line.innerHTML =
+          "库存 <strong>" +
+          (item.total ?? 0) +
+          "</strong> · 已订峰值 <strong>" +
+          (item.peak_booked ?? 0) +
+          "</strong> · 余 <strong>" +
+          (item.remaining_hint ?? 0) +
+          "</strong>";
+      } catch (e) {}
+    }
+    setInterval(tick, 4000);
+  })();
+</script>
+{% endblock %}

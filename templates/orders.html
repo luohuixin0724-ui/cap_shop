@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}订单 — {{ SHOP_NAME }}{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index') }}">返回</a>
+  <span class="subbar-title">订单</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+<div class="sheet plain">
+  <h1 class="page-h1">订单说明</h1>
+  <p class="muted-p">本站为轻量预定页：下单成功后会跳转到「支付页」，请在那里保存 <strong>订单号</strong>，并扫码完成线下转账。</p>
+  <p class="muted-p">如需改期或退订，请凭订单号联系店主（可在「我的」里查看联系方式占位）。</p>
+  <a class="btn-block secondary" href="{{ url_for('index', tab='menu') }}#menu">返回点单</a>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}订单 {{ order.id }} — 支付{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index') }}">返回</a>
+  <span class="subbar-title">支付</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+<section class="pay-head">
+  <h1 class="page-h1">订单已生成</h1>
+  <p class="muted-p">请使用下方收款码完成支付。支付完成后请截图保存 <strong>订单号</strong> 以便核对。</p>
+</section>
+
+<div class="pay-grid">
+  <div class="sheet">
+    <h2 class="sheet-title">订单明细</h2>
+    <p class="mono-line">订单号 {{ order.id }}</p>
+    <p class="muted-p">下单 {{ order.created_at }} · 状态 <strong>{{ order.status }}</strong></p>
+    <hr class="hr" />
+    {% if order.kind == "rental" %}
+    <p><strong>{{ order.product_name }}</strong></p>
+    <p class="muted-p">租期 {{ order.start_date }} ～ {{ order.end_date }}（{{ order.days }} 天）· {{ order.quantity }} 顶</p>
+    <p class="muted-p">租金 {{ order.rent_yuan }} 元 · 押金 {{ order.deposit_yuan }} 元</p>
+    <p class="pay-sum">应付合计 ¥{{ order.total_yuan }}</p>
+    <p class="muted-p">{{ order.customer_name }} · {{ order.phone }}</p>
+    <p class="muted-p">{{ order.address }}</p>
+    {% if order.location_note %}
+    <p class="muted-p">送达说明：{{ order.location_note }}</p>
+    {% endif %}
+    {% else %}
+    <p><strong>{{ order.product_name }}</strong></p>
+    <p class="muted-p">希望送达 {{ order.need_date }}</p>
+    <p class="pay-sum">应付 ¥{{ order.total_yuan }}</p>
+    <p class="muted-p">{{ order.customer_name }} · {{ order.phone }}</p>
+    <p class="muted-p">{{ order.address }}</p>
+    {% if order.notes %}
+    <p class="muted-p">备注：{{ order.notes }}</p>
+    {% endif %}
+    {% if order.image_file %}
+    <p>
+      <a href="{{ url_for('static', filename='uploads/' + order.image_file) }}" target="_blank" rel="noopener">查看上传的设计图</a>
+    </p>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="sheet qr-card">
+    <h2 class="sheet-title">收款码</h2>
+    <div class="qr-wrap">
+      <img src="{{ qr_url }}" alt="收款码" width="220" height="220" />
+    </div>
+    <p class="hint">替换为真实码：将图片放到 <span class="mono">static/img/payment_qr.png</span>（或 .jpg）</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{
+  "products": [
+    {
+      "id": "r01",
+      "name": "经典哑光黑",
+      "type": "rental",
+      "total": 25
+    },
+    {
+      "id": "r02",
+      "name": "亮面钢琴黑",
+      "type": "rental",
+      "total": 20
+    },
+    {
+      "id": "r03",
+      "name": "藏青学院款",
+      "type": "rental",
+      "total": 18
+    },
+    {
+      "id": "r04",
+      "name": "丝绒深蓝",
+      "type": "rental",
+      "total": 15
+    },
+    {
+      "id": "r05",
+      "name": "银灰简约款",
+      "type": "rental",
+      "total": 16
+    },
+    {
+      "id": "r06",
+      "name": "象牙白文艺款",
+      "type": "rental",
+      "total": 12
+    },
+    {
+      "id": "r07",
+      "name": "烫金校徽位（无校徽）",
+      "type": "rental",
+      "total": 22
+    },
+    {
+      "id": "r08",
+      "name": "流苏金穗套装",
+      "type": "rental",
+      "total": 20
+    },
+    {
+      "id": "r09",
+      "name": "加大头围款",
+      "type": "rental",
+      "total": 10
+    },
+    {
+      "id": "r10",
+      "name": "儿童礼仪款",
+      "type": "rental",
+      "total": 8
+    },
+    {
+      "id": "custom",
+      "name": "私人定制款",
+      "type": "custom",
+      "total": 0,
+      "note": "提前一周发图，工作人员确认后制作"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "555e6836a8cf",
+      "kind": "rental",
+      "product_id": "r01",
+      "product_name": "经典哑光黑",
+      "customer_name": "huixin luo",
+      "phone": "13782021912",
+      "address": "需要",
+      "location_note": "宝山校区南门",
+      "start_date": "2026-05-14",
+      "end_date": "2026-05-15",
+      "quantity": 1,
+      "rent_yuan": 40,
+      "deposit_yuan": 30,
+      "total_yuan": 70,
+      "days": 2,
+      "status": "pending_payment",
+      "created_at": "2026-05-14T23:44:03"
+    }
+  ]
+}
