@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — 详情 {{ detail_page }}/2{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <span class="subbar-title">商品详情 {{ detail_page }}/2</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+<section class="detail-hero">
+  <div class="detail-img img-43">
+    <img
+      src="{{ detail_image }}"
+      alt="{{ product.name }} — 图{{ detail_page }}"
+      width="400"
+      height="300"
+    />
+  </div>
+  <div class="detail-text">
+    <h1 class="detail-name">{{ product.name }}</h1>
+    <p class="detail-desc">{{ product.desc }}</p>
+    <div class="detail-price">¥{{ RENT_PER_DAY }}/天 · 押金 ¥{{ DEPOSIT_PER_UNIT }}/顶</div>
+    <p class="detail-inv inv-line" data-inv-inline>
+      库存 <strong>{{ inv.total or 0 }}</strong> · 已订峰值 <strong>{{ inv.peak_booked or 0 }}</strong> · 余 <strong>{{ inv.remaining_hint or 0 }}</strong>
+    </p>
+  </div>
+</section>
+
+<nav class="detail-pager" aria-label="详情图切换">
+  {% if detail_page == 1 %}
+  <span class="detail-pager-cur">图 1 / 2</span>
+  <a class="detail-pager-link" href="{{ url_for('product_detail_2', pid=product.id) }}">下一张 →</a>
+  {% else %}
+  <a class="detail-pager-link" href="{{ url_for('product_detail', pid=product.id) }}">← 上一张</a>
+  <span class="detail-pager-cur">图 2 / 2</span>
+  {% endif %}
+</nav>
+
+<div class="sheet detail-actions">
+  <a class="btn-block" href="{{ url_for('book_rental_page', pid=product.id) }}">立即预定</a>
+</div>
+
+<script>
+  (function () {
+    const pid = "{{ product.id }}";
+    const line = document.querySelector("[data-inv-inline]");
+    async function tick() {
+      try {
+        const res = await fetch("{{ url_for('api_inventory') }}", { cache: "no-store" });
+        const data = await res.json();
+        const item = (data.items || []).find((x) => x.id === pid);
+        if (!item || !line) return;
+        line.innerHTML =
+          "库存 <strong>" +
+          (item.total ?? 0) +
+          "</strong> · 已订峰值 <strong>" +
+          (item.peak_booked ?? 0) +
+          "</strong> · 余 <strong>" +
+          (item.remaining_hint ?? 0) +
+          "</strong>";
+      } catch (e) {}
+    }
+    setInterval(tick, 4000);
+  })();
+</script>
+{% endblock %}

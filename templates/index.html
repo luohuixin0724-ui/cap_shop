@@ -11,14 +11,6 @@
   </div>
 
   <div class="promo-row">
-    <a class="promo-card" href="{{ url_for('product_detail', pid=custom_product.id) }}">
-      <div>
-        <div class="promo-kicker">定制专区</div>
-        <div class="promo-title">私人定制 · {{ CUSTOM_PRICE }} 元</div>
-        <div class="promo-sub">提前 {{ CUSTOM_LEAD_DAYS }} 天发图 · 确认后制作配送</div>
-      </div>
-      <span class="promo-go">去下单</span>
-    </a>
     <div class="promo-card muted">
       <div>
         <div class="promo-kicker">租借说明</div>
@@ -39,7 +31,7 @@
     {% for p in signature %}
     {% set iv = inv_map.get(p.id, {}) %}
     <a class="sig-card" href="{{ url_for('product_detail', pid=p.id) }}">
-      <div class="sig-img"><img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy" width="120" height="120" /></div>
+      <div class="sig-img img-43"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" width="120" height="90" /></div>
       <div class="sig-name">{{ p.name }}</div>
       <div class="sig-price">¥{{ RENT_PER_DAY }}/天起</div>
       <div class="sig-meta inv-sig" data-pid="{{ p.id }}">余 {{ iv.remaining_hint or 0 }}</div>
@@ -62,8 +54,8 @@
       {% for p in plist %}
       {% set iv = inv_map.get(p.id, {}) %}
       <a class="sku-row" href="{{ url_for('product_detail', pid=p.id) }}" data-pid="{{ p.id }}">
-        <div class="sku-thumb">
-          <img src="{{ url_for('static', filename=p.image) }}" alt="{{ p.name }}" loading="lazy" width="88" height="88" />
+        <div class="sku-thumb img-43">
+          <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" width="88" height="66" />
         </div>
         <div class="sku-main">
           <div class="sku-tags">

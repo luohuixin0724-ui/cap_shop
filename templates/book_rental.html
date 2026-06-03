@@ -2,15 +2,15 @@
 {% block title %}{{ product.name }} — 预定{% endblock %}
 {% block topbar %}
 <div class="subbar">
-  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <a class="subbar-back" href="{{ url_for('product_detail', pid=product.id) }}">返回</a>
   <span class="subbar-title">填写预定</span>
   <span class="subbar-spacer"></span>
 </div>
 {% endblock %}
 {% block body %}
-<section class="detail-hero">
-  <div class="detail-img">
-    <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" width="280" height="280" />
+<section class="detail-hero detail-hero--compact">
+  <div class="detail-img img-43 detail-img--compact">
+    <img src="{{ product.image }}" alt="{{ product.name }}" width="160" height="120" />
   </div>
   <div class="detail-text">
     <h1 class="detail-name">{{ product.name }}</h1>

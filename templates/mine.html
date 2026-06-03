@@ -21,6 +21,85 @@
       <div class="mine-v">全城预约配送，具体时段以支付后短信为准。</div>
     </div>
   </div>
+  <button type="button" class="btn-block secondary" id="open-admin-panel" aria-haspopup="dialog">
+    账单管理
+  </button>
   <a class="btn-block" href="{{ url_for('index', tab='menu') }}#menu">去点单</a>
 </div>
+
+<div
+  class="admin-modal{% if open_admin_panel %} is-open{% endif %}"
+  id="admin-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="admin-modal-title"
+  hidden
+>
+  <div class="admin-modal-backdrop" data-admin-close></div>
+  <div class="admin-modal-sheet">
+    <header class="admin-modal-head">
+      <h2 class="admin-modal-title" id="admin-modal-title">账单管理</h2>
+      <button type="button" class="admin-modal-close" data-admin-close aria-label="关闭">×</button>
+    </header>
+    <div class="admin-modal-body">
+      {% if admin_logged_in %}
+      {% include "_admin_bills_panel.html" %}
+      {% else %}
+      <p class="muted-p">店主登录后可查看全部订单与收款信息。</p>
+      <form method="post" action="{{ url_for('mine_admin_login') }}" class="admin-form">
+        <label class="field-label" for="admin-username">账号</label>
+        <input
+          class="field-input"
+          type="text"
+          id="admin-username"
+          name="username"
+          autocomplete="username"
+          required
+          placeholder="请输入账号"
+        />
+        <label class="field-label" for="admin-password">密码</label>
+        <input
+          class="field-input"
+          type="password"
+          id="admin-password"
+          name="password"
+          autocomplete="current-password"
+          required
+          placeholder="请输入密码"
+        />
+        <button class="btn-block" type="submit">登录</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var modal = document.getElementById("admin-modal");
+  var openBtn = document.getElementById("open-admin-panel");
+  if (!modal || !openBtn) return;
+
+  function openModal() {
+    modal.hidden = false;
+    modal.classList.add("is-open");
+    document.body.classList.add("admin-modal-open");
+  }
+
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.hidden = true;
+    document.body.classList.remove("admin-modal-open");
+  }
+
+  openBtn.addEventListener("click", openModal);
+  modal.querySelectorAll("[data-admin-close]").forEach(function (el) {
+    el.addEventListener("click", closeModal);
+  });
+
+  if (modal.classList.contains("is-open")) {
+    openModal();
+  }
+})();
+</script>
 {% endblock %}

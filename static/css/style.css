@@ -203,18 +203,22 @@ a {
   box-shadow: 0 6px 18px rgba(31, 27, 22, 0.06);
 }
 
-.sig-img {
-  width: 120px;
-  height: 120px;
-  border-radius: 10px;
+.img-43 {
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--bg-2);
 }
 
-.sig-img img {
+.img-43 img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.sig-img {
+  width: 120px;
+  border-radius: 10px;
 }
 
 .sig-name {
@@ -301,17 +305,8 @@ a {
 
 .sku-thumb {
   width: 88px;
-  height: 88px;
   border-radius: 10px;
-  overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg);
-}
-
-.sku-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .sku-main {
@@ -454,18 +449,43 @@ a {
 
 .detail-img {
   margin: 0 auto;
-  max-width: 280px;
+  max-width: 100%;
   border-radius: 16px;
-  overflow: hidden;
   border: 1px solid var(--line);
   background: #fff;
   box-shadow: var(--shadow);
 }
 
-.detail-img img {
-  display: block;
-  width: 100%;
-  height: auto;
+.detail-img--compact {
+  max-width: 160px;
+}
+
+.detail-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 14px 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.detail-pager-cur {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.detail-pager-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.detail-actions {
+  margin-top: 0;
 }
 
 .detail-text {
@@ -677,6 +697,272 @@ textarea {
   .shop-hero,
   .sig-section,
   .menu-split {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* —— 我的 · 账单管理弹窗 —— */
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.admin-modal.is-open {
+  display: flex;
+}
+
+body.admin-modal-open {
+  overflow: hidden;
+}
+
+.admin-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 27, 22, 0.45);
+}
+
+.admin-modal-sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-height: 88vh;
+  background: var(--bg-2);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 32px rgba(31, 27, 22, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.admin-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.admin-modal-close {
+  border: none;
+  background: var(--rail);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.admin-modal-body {
+  overflow: auto;
+  padding: 12px 14px calc(20px + var(--safe-b));
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-bills-summary {
+  margin-bottom: 8px;
+}
+
+.admin-bills-logout {
+  margin: 0 0 12px;
+  text-align: right;
+}
+
+.admin-order-list--in-modal {
+  padding: 0;
+}
+
+@media (min-width: 720px) {
+  .admin-modal {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .admin-modal-sheet {
+    max-width: 520px;
+    max-height: 85vh;
+    border-radius: 16px;
+  }
+}
+
+/* —— 独立商家页（遗留样式） —— */
+body.admin-shell .admin-scroll {
+  padding-bottom: 16px;
+}
+
+.admin-head {
+  padding: 14px 14px 4px;
+}
+
+.admin-login {
+  margin: 14px;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field-input,
+.field-select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 16px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.admin-hint {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.subbar-link {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.admin-logout-form {
+  margin: 0;
+}
+
+.admin-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+
+.admin-order-card {
+  margin: 0;
+}
+
+.admin-order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.status-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--rail);
+}
+
+.status-pill.status-pending_payment {
+  color: #92400e;
+  background: #fff8e8;
+  border-color: #f5e3c3;
+}
+
+.status-pill.status-paid {
+  color: var(--ok);
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+.status-pill.status-cancelled {
+  color: var(--muted);
+  background: #f3f4f6;
+}
+
+.admin-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.admin-status-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-status-form .field-select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.btn-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-inline.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: #fff;
+}
+
+.muted-p.inline {
+  display: inline;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (min-width: 720px) {
+  .admin-head,
+  .admin-order-list,
+  .admin-login {
     max-width: 720px;
     margin-left: auto;
     margin-right: auto;

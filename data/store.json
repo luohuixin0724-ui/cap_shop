@@ -59,13 +59,6 @@
       "name": "儿童礼仪款",
       "type": "rental",
       "total": 8
-    },
-    {
-      "id": "custom",
-      "name": "私人定制款",
-      "type": "custom",
-      "total": 0,
-      "note": "提前一周发图，工作人员确认后制作"
     }
   ],
   "bookings": [
