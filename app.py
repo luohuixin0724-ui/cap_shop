@@ -12,6 +12,8 @@ from pathlib import Path
 
 def _beijing_tz():
     try:
+        import tzdata  # noqa: F401 — Windows 上 ZoneInfo 依赖此包
+
         from zoneinfo import ZoneInfo
 
         return ZoneInfo("Asia/Shanghai")
