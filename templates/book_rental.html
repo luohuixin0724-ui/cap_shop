@@ -28,12 +28,12 @@
     <input type="hidden" name="product_id" value="{{ product.id }}" />
     <div class="form-row">
       <label for="start_date">租借开始</label>
-      <input type="date" id="start_date" name="start_date" required min="{{ today_iso }}" />
-      <span class="hint">按自然日计费，含首尾两天。</span>
+      <input type="date" id="start_date" name="start_date" required min="{{ beijing_today_iso }}" />
+      <span class="hint">按自然日计费，含首尾两天；日期以{{ beijing_tz_label }}为准。</span>
     </div>
     <div class="form-row">
       <label for="end_date">租借结束</label>
-      <input type="date" id="end_date" name="end_date" required min="{{ today_iso }}" />
+      <input type="date" id="end_date" name="end_date" required min="{{ beijing_today_iso }}" />
     </div>
     <div class="form-row">
       <label for="quantity">数量（顶）</label>
@@ -63,6 +63,21 @@
   (function () {
     const pid = "{{ product.id }}";
     const line = document.querySelector("[data-inv-inline]");
+    const startInput = document.getElementById("start_date");
+    const endInput = document.getElementById("end_date");
+
+    async function syncBeijingDates() {
+      try {
+        const res = await fetch("{{ url_for('api_time') }}", { cache: "no-store" });
+        const data = await res.json();
+        const today = data.today;
+        if (!today) return;
+        if (startInput) startInput.min = today;
+        if (endInput) endInput.min = today;
+      } catch (e) {}
+    }
+    syncBeijingDates();
+
     async function tick() {
       try {
         const res = await fetch("{{ url_for('api_inventory') }}", { cache: "no-store" });

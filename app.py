@@ -7,8 +7,16 @@ import json
 import os
 import re
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+def _beijing_tz():
+    try:
+        from zoneinfo import ZoneInfo
+
+        return ZoneInfo("Asia/Shanghai")
+    except Exception:
+        return timezone(timedelta(hours=8))
 
 from functools import wraps
 
@@ -19,7 +27,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    send_from_directory,
     session,
     url_for,
 )
@@ -27,11 +34,9 @@ from flask import (
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "data" / "store.json"
 
-# 商品实拍目录：ch1=第1个商品，ch1_1/ch1_2=第1/2张图（4:3）
-_DEFAULT_PHOTOS_DIR = Path(r"C:\Users\a1036\OneDrive\图片\img")
-PRODUCT_PHOTOS_DIR = Path(os.environ.get("PRODUCT_PHOTOS_DIR", str(_DEFAULT_PHOTOS_DIR)))
-
-PHOTO_FILE_RE = re.compile(r"^ch\d+_[12]\.(jpe?g|png|webp)$", re.IGNORECASE)
+# 全站时间以北京时间（东八区 / Asia/Shanghai）为准
+BEIJING_TZ = _beijing_tz()
+BEIJING_TZ_LABEL = "北京时间"
 
 RENT_PER_DAY = 20
 DEPOSIT_PER_UNIT = 30
@@ -75,10 +80,11 @@ CATEGORIES = [
 DEFAULT_PRODUCTS = [
     {
         "id": "r01",
-        "photo_key": "ch1",
         "name": "春野粉簪",
         "type": "rental",
         "category_id": "zan",
+        "image": "img/caps/ch1_1.jpg",
+        "image_2": "img/caps/ch1_2.jpg",
         "desc": "侧簪层次丰富，粉调温柔出片",
         "tags": ["热销", "店长推荐"],
         "monthly_sales": 186,
@@ -86,10 +92,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r02",
-        "photo_key": "ch2",
         "name": "铃兰垂丝",
         "type": "rental",
         "category_id": "zan",
+        "image": "img/caps/ch2_1.jpg",
+        "image_2": "img/caps/ch2_2.jpg",
         "desc": "垂坠铃兰造型，清新学院感",
         "tags": ["必租"],
         "monthly_sales": 142,
@@ -97,10 +104,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r03",
-        "photo_key": "ch3",
         "name": "山茶绣球",
         "type": "rental",
         "category_id": "zan",
+        "image": "img/caps/ch3_1.jpg",
+        "image_2": "img/caps/ch3_2.jpg",
         "desc": "围边山茶 + 绣球体量感",
         "tags": ["上新"],
         "monthly_sales": 96,
@@ -108,10 +116,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r04",
-        "photo_key": "ch4",
         "name": "银铃叮当",
         "type": "rental",
         "category_id": "miaoyin",
+        "image": "img/caps/ch4_1.jpg",
+        "image_2": "img/caps/ch4_2.jpg",
         "desc": "苗银流苏细节，行走有轻响",
         "tags": ["民族风"],
         "monthly_sales": 131,
@@ -119,10 +128,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r05",
-        "photo_key": "ch5",
         "name": "孔雀碧羽",
         "type": "rental",
         "category_id": "miaoyin",
+        "image": "img/caps/ch5_1.jpg",
+        "image_2": "img/caps/ch5_2.jpg",
         "desc": "碧色羽饰 + 银饰层次",
         "tags": ["出片"],
         "monthly_sales": 118,
@@ -130,10 +140,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r06",
-        "photo_key": "ch6",
         "name": "红瑙璎珞",
         "type": "rental",
         "category_id": "miaoyin",
+        "image": "img/caps/ch6_1.jpg",
+        "image_2": "img/caps/ch6_2.jpg",
         "desc": "玛瑙红珠璎珞，气场更足",
         "tags": ["重工银饰"],
         "monthly_sales": 104,
@@ -141,10 +152,11 @@ DEFAULT_PRODUCTS = [
     },
     {
         "id": "r07",
-        "photo_key": "ch7",
         "name": "水墨雾面",
         "type": "rental",
         "category_id": "chouxiang",
+        "image": "img/caps/ch7_1.jpg",
+        "image_2": "img/caps/ch7_2.jpg",
         "desc": "黑白渐变雾面，像画里走出来",
         "tags": ["艺术感"],
         "monthly_sales": 88,
@@ -190,29 +202,60 @@ def ensure_dirs() -> None:
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
+def beijing_now() -> datetime:
+    return datetime.now(BEIJING_TZ)
+
+
+def beijing_today() -> date:
+    return beijing_now().date()
+
+
+def beijing_now_iso() -> str:
+    return beijing_now().replace(microsecond=0).isoformat(timespec="seconds")
+
+
+def parse_created_at(value: str | None) -> datetime | None:
+    """解析订单时间；无偏移的历史数据按已是北京时间处理。"""
+    if not value:
+        return None
+    raw = str(value).strip()
+    try:
+        normalized = raw.replace("Z", "+00:00")
+        if "T" not in normalized and " " in normalized:
+            normalized = normalized.replace(" ", "T", 1)
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=BEIJING_TZ)
+        return dt.astimezone(BEIJING_TZ)
+    except ValueError:
+        return None
+
+
+def format_beijing_time(value: str | None) -> str:
+    """将 ISO 时间格式化为北京时间显示。"""
+    dt = parse_created_at(value)
+    if dt is None:
+        return str(value or "").strip()
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def beijing_time_payload() -> dict:
+    now = beijing_now()
+    return {
+        "timezone": "Asia/Shanghai",
+        "label": BEIJING_TZ_LABEL,
+        "now": beijing_now_iso(),
+        "today": beijing_today().isoformat(),
+        "utc_offset": now.strftime("%z"),
+    }
+
+
 def static_image_exists(rel_path: str) -> bool:
     return (BASE_DIR / "static" / rel_path).is_file()
 
 
 def static_image_href(rel_path: str) -> str:
     return f"/static/{rel_path.lstrip('/')}"
-
-
-def find_photo_file(photo_key: str, photo_num: int) -> str | None:
-    """在实拍目录查找 ch{n}_{1|2}.jpg 等文件，返回文件名。"""
-    if not photo_key or photo_num not in (1, 2):
-        return None
-    if not PRODUCT_PHOTOS_DIR.is_dir():
-        return None
-    for ext in (".jpg", ".jpeg", ".png", ".webp"):
-        name = f"{photo_key}_{photo_num}{ext}"
-        if (PRODUCT_PHOTOS_DIR / name).is_file():
-            return name
-    return None
-
-
-def photo_file_href(filename: str) -> str:
-    return f"/product-photos/{filename}"
 
 
 def static_fallback_href(product_id: str) -> str:
@@ -225,24 +268,13 @@ def static_fallback_href(product_id: str) -> str:
 
 def enrich_product_images(prod: dict) -> dict:
     row = dict(prod)
-    pid = str(row["id"])
-    photo_key = row.get("photo_key")
-    if photo_key:
-        f1 = find_photo_file(photo_key, 1)
-        f2 = find_photo_file(photo_key, 2)
-        row["image"] = photo_file_href(f1) if f1 else static_fallback_href(pid)
-        row["image_2"] = photo_file_href(f2) if f2 else row["image"]
+    if str(row.get("image", "")).startswith("/static/"):
         return row
-    primary = row.get("image") or f"img/caps/{pid}.svg"
-    if primary.startswith("img/"):
-        row["image"] = static_image_href(primary) if static_image_exists(primary) else static_fallback_href(pid)
-    else:
-        row["image"] = primary
-    secondary = row.get("image_2")
-    if secondary and str(secondary).startswith("img/") and static_image_exists(secondary):
-        row["image_2"] = static_image_href(secondary)
-    else:
-        row["image_2"] = row["image"]
+    pid = str(row["id"])
+    img1 = row.get("image") or f"img/caps/{pid}.svg"
+    img2 = row.get("image_2") or img1
+    row["image"] = static_image_href(img1) if static_image_exists(img1) else static_fallback_href(pid)
+    row["image_2"] = static_image_href(img2) if static_image_exists(img2) else row["image"]
     return row
 
 
@@ -355,7 +387,7 @@ def inventory_snapshot(store: dict) -> list[dict]:
     products = store["products"]
     bookings = store["bookings"]
     out: list[dict] = []
-    today = date.today()
+    today = beijing_today()
     horizon_end = today + timedelta(days=120)
     for p in products:
         if p.get("type") != "rental":
@@ -475,6 +507,10 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-bachelor-cap-secret")
 
+    @app.template_filter("fmt_bj")
+    def fmt_bj_filter(value: str | None) -> str:
+        return format_beijing_time(value)
+
     @app.context_processor
     def inject_shop():
         return {
@@ -486,15 +522,9 @@ def create_app() -> Flask:
             "CATEGORIES": CATEGORIES,
             "nav_active": nav_active_key,
             "STATUS_LABELS": STATUS_LABELS,
+            "beijing_today_iso": beijing_today().isoformat(),
+            "beijing_tz_label": BEIJING_TZ_LABEL,
         }
-
-    @app.route("/product-photos/<filename>")
-    def product_photo(filename: str):
-        if not PHOTO_FILE_RE.match(filename):
-            return "Not Found", 404
-        if not PRODUCT_PHOTOS_DIR.is_dir():
-            return "Not Found", 404
-        return send_from_directory(PRODUCT_PHOTOS_DIR, filename)
 
     @app.route("/")
     def index():
@@ -570,15 +600,17 @@ def create_app() -> Flask:
         flash(f"订单已更新为「{STATUS_LABELS.get(new_status, new_status)}」。", "ok")
         return redirect(url_for("mine_page", panel="admin"))
 
+    @app.route("/api/time")
+    def api_time():
+        return jsonify(beijing_time_payload())
+
     @app.route("/api/inventory")
     def api_inventory():
         store = load_store()
-        return jsonify(
-            {
-                "updated_at": datetime.now().isoformat(timespec="seconds"),
-                "items": inventory_snapshot(store),
-            }
-        )
+        payload = beijing_time_payload()
+        payload["updated_at"] = payload["now"]
+        payload["items"] = inventory_snapshot(store)
+        return jsonify(payload)
 
     @app.route("/product/<pid>")
     def product_detail(pid: str):
@@ -619,13 +651,11 @@ def create_app() -> Flask:
         if not prod:
             flash("未找到该款式。", "error")
             return redirect(url_for("index"))
-        today_iso = date.today().isoformat()
         inv = {x["id"]: x for x in inventory_snapshot(store)}
         return render_template(
             "book_rental.html",
             product=prod,
             inv=inv.get(pid, {}),
-            today_iso=today_iso,
         )
 
     @app.route("/book/rental", methods=["POST"])
@@ -654,6 +684,10 @@ def create_app() -> Flask:
         if not start or not end or end < start:
             flash("请选择有效的起止日期。", "error")
             return redirect(url_for("book_rental_page", pid=pid))
+        today = beijing_today()
+        if start < today:
+            flash(f"租借开始不能早于今天（{BEIJING_TZ_LABEL}）。", "error")
+            return redirect(url_for("book_rental_page", pid=pid))
         if qty < 1 or qty > 10:
             flash("数量应在 1～10 顶之间。", "error")
             return redirect(url_for("book_rental_page", pid=pid))
@@ -681,7 +715,7 @@ def create_app() -> Flask:
             "total_yuan": cost["total"],
             "days": cost["days"],
             "status": "pending_payment",
-            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "created_at": beijing_now_iso(),
         }
         store["bookings"].append(booking)
         save_store(store)

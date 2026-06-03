@@ -17,7 +17,7 @@
   <div class="sheet">
     <h2 class="sheet-title">订单明细</h2>
     <p class="mono-line">订单号 {{ order.id }}</p>
-    <p class="muted-p">下单 {{ order.created_at }} · 状态 <strong>{{ order.status }}</strong></p>
+    <p class="muted-p">下单 {{ order.created_at | fmt_bj }}（北京时间） · 状态 <strong>{{ order.status }}</strong></p>
     <hr class="hr" />
     {% if order.kind == "rental" %}
     <p><strong>{{ order.product_name }}</strong></p>

@@ -17,7 +17,7 @@
       <span class="mono-line">#{{ b.id }}</span>
       <span class="status-pill status-{{ b.status }}">{{ STATUS_LABELS.get(b.status, b.status) }}</span>
     </div>
-    <p class="muted-p">下单 {{ b.created_at }}</p>
+    <p class="muted-p">下单 {{ b.created_at | fmt_bj }}（北京时间）</p>
     {% if b.kind == "rental" %}
     <p><strong>{{ b.product_name }}</strong></p>
     <p class="muted-p">租期 {{ b.start_date }} ～ {{ b.end_date }}（{{ b.days }} 天）· {{ b.quantity }} 顶</p>
