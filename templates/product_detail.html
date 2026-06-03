@@ -1,21 +1,30 @@
 {% extends "base.html" %}
-{% block title %}{{ product.name }} — 详情 {{ detail_page }}/2{% endblock %}
+{% block title %}{{ product.name }} — 详情{% endblock %}
 {% block topbar %}
 <div class="subbar">
   <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
-  <span class="subbar-title">商品详情 {{ detail_page }}/2</span>
+  <span class="subbar-title">商品详情</span>
   <span class="subbar-spacer"></span>
 </div>
 {% endblock %}
 {% block body %}
 <section class="detail-hero">
-  <div class="detail-img img-43">
-    <img
-      src="{{ detail_image }}"
-      alt="{{ product.name }} — 图{{ detail_page }}"
-      width="400"
-      height="300"
-    />
+  <div class="detail-gallery-wrap">
+    <div class="detail-gallery" id="detail-gallery" aria-label="商品图片，左右滑动切换">
+      {% for img in gallery_images %}
+      <figure class="detail-slide img-portrait">
+        <button type="button" class="detail-zoom-btn" data-src="{{ img }}" aria-label="放大查看第 {{ loop.index }} 张图">
+          <img src="{{ img }}" alt="{{ product.name }} — 图 {{ loop.index }}" width="360" height="480" loading="lazy" />
+        </button>
+      </figure>
+      {% endfor %}
+    </div>
+    <div class="gallery-dots" id="gallery-dots" aria-hidden="true">
+      {% for img in gallery_images %}
+      <span class="gallery-dot{% if loop.first %} active{% endif %}"></span>
+      {% endfor %}
+    </div>
+    <p class="gallery-hint muted-p">左右滑动 · 点击图片放大</p>
   </div>
   <div class="detail-text">
     <h1 class="detail-name">{{ product.name }}</h1>
@@ -27,20 +36,19 @@
   </div>
 </section>
 
-<nav class="detail-pager" aria-label="详情图切换">
-  {% if detail_page == 1 %}
-  <span class="detail-pager-cur">图 1 / 2</span>
-  <a class="detail-pager-link" href="{{ url_for('product_detail_2', pid=product.id) }}">下一张 →</a>
-  {% else %}
-  <a class="detail-pager-link" href="{{ url_for('product_detail', pid=product.id) }}">← 上一张</a>
-  <span class="detail-pager-cur">图 2 / 2</span>
-  {% endif %}
-</nav>
-
 <div class="sheet detail-actions">
   <a class="btn-block" href="{{ url_for('book_rental_page', pid=product.id) }}">立即预定</a>
 </div>
 
+<div class="lightbox" id="lightbox" hidden aria-modal="true" role="dialog" aria-label="放大查看">
+  <button type="button" class="lightbox-backdrop" data-lightbox-close aria-label="关闭"></button>
+  <div class="lightbox-stage">
+    <img id="lightbox-img" src="" alt="" />
+  </div>
+  <button type="button" class="lightbox-close" data-lightbox-close aria-label="关闭">×</button>
+</div>
+
+<script src="{{ url_for('static', filename='js/product-gallery.js') }}"></script>
 <script>
   (function () {
     const pid = "{{ product.id }}";

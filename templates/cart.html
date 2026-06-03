@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}购物车 — {{ SHOP_NAME }}{% endblock %}
+{% block topbar %}
+<div class="subbar">
+  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <span class="subbar-title">购物车</span>
+  <span class="subbar-spacer"></span>
+</div>
+{% endblock %}
+{% block body %}
+{% if not cart %}
+<div class="sheet plain cart-empty">
+  <h1 class="page-h1">购物车是空的</h1>
+  <p class="muted-p">去点单选款式，填写租期后点击「加入购物车」。</p>
+  <a class="btn-block" href="{{ url_for('index', tab='menu') }}#menu">去点单</a>
+</div>
+{% else %}
+<div class="cart-list">
+  {% for item in cart %}
+  <article class="sheet cart-item">
+    <div class="cart-item-top">
+      <div class="cart-thumb img-43">
+        {% if item.product_image %}
+        <img src="{{ item.product_image }}" alt="{{ item.product_name }}" width="88" height="66" />
+        {% endif %}
+      </div>
+      <div class="cart-item-main">
+        <h3 class="cart-item-name">{{ item.product_name }}</h3>
+        <p class="muted-p">租期 {{ item.start_date }} ～ {{ item.end_date }}（{{ item.days }} 天）</p>
+        <p class="muted-p">{{ item.quantity }} 顶 · 租金 ¥{{ item.rent_yuan }} + 押金 ¥{{ item.deposit_yuan }}</p>
+        <p class="cart-item-price">¥{{ item.total_yuan }}</p>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('cart_remove', cart_id=item.cart_id) }}" class="cart-remove-form">
+      <button type="submit" class="btn-inline">移除</button>
+    </form>
+  </article>
+  {% endfor %}
+</div>
+
+<div class="sheet cart-summary">
+  <p class="cart-sum-line">共 <strong>{{ totals.items }}</strong> 件</p>
+  <p class="cart-sum-line muted-p">租金 ¥{{ totals.rent }} · 押金 ¥{{ totals.deposit }}</p>
+  <p class="pay-sum">合计 ¥{{ totals.total }}</p>
+</div>
+
+<div class="sheet">
+  <h2 class="sheet-title">收货信息（结算一次填写）</h2>
+  <form method="post" action="{{ url_for('cart_checkout') }}">
+    <div class="form-row">
+      <label for="customer_name">收货人姓名</label>
+      <input type="text" id="customer_name" name="customer_name" required />
+    </div>
+    <div class="form-row">
+      <label for="phone">手机号</label>
+      <input type="tel" id="phone" name="phone" required />
+    </div>
+    <div class="form-row">
+      <label for="address">收货地址</label>
+      <textarea id="address" name="address" required placeholder="省市区 + 详细门牌"></textarea>
+    </div>
+    <div class="form-row">
+      <label for="location_note">送达说明（可选）</label>
+      <input type="text" id="location_note" name="location_note" placeholder="校区/校门/楼栋等" />
+    </div>
+    <button class="btn-block" type="submit">提交全部订单并支付</button>
+  </form>
+</div>
+{% endif %}
+<p class="cart-foot muted-p">
+  <a href="{{ url_for('orders_page') }}">订单与支付说明</a>
+</p>
+{% endblock %}

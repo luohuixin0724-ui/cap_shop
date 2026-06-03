@@ -45,6 +45,9 @@ SHOP_NAME = "花枝鼠の学士帽"
 SHOP_ADDRESS = "每天10:00配送至宿舍楼下，可自取"
 SHOP_NOTICE = "租借为实物档期制：支付后锁定排期。"
 
+# 进站导览图（放于 static/img/fengye.png）
+FENGYE_IMAGE = "img/fengye.png"
+
 # 商家账单：在「我的」页弹窗登录；部署请改 ADMIN_USERNAME / ADMIN_PASSWORD
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "shopowner")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "cap-shop-admin-2026")
@@ -299,6 +302,23 @@ def get_rental_product(store: dict, pid: str) -> dict | None:
     return enrich_product_images(prod)
 
 
+def product_gallery_images(prod: dict) -> list[str]:
+    images: list[str] = []
+    for key in ("image", "image_2"):
+        url = prod.get(key)
+        if url and url not in images:
+            images.append(str(url))
+    if not images:
+        images.append(static_fallback_href(str(prod["id"])))
+    return images
+
+
+def welcome_image_href() -> str | None:
+    if static_image_exists(FENGYE_IMAGE):
+        return static_image_href(FENGYE_IMAGE)
+    return None
+
+
 def load_store() -> dict:
     ensure_dirs()
     if not DATA_PATH.exists():
@@ -366,12 +386,142 @@ def max_overlap_usage(
     return peak
 
 
-def rental_available(product: dict, bookings: list, start: date, end: date, qty: int) -> bool:
+def max_cart_overlap(
+    cart: list, product_id: str, start: date, end: date, ignore_cart_id: str | None = None
+) -> int:
+    peak = 0
+    for d in daterange(start, end):
+        used = 0
+        for item in cart:
+            if item.get("cart_id") == ignore_cart_id:
+                continue
+            if item.get("product_id") != product_id:
+                continue
+            bs = parse_date(item.get("start_date"))
+            be = parse_date(item.get("end_date"))
+            if not bs or not be:
+                continue
+            if bs <= d <= be:
+                used += int(item.get("quantity") or 1)
+        peak = max(peak, used)
+    return peak
+
+
+def rental_available(
+    product: dict,
+    bookings: list,
+    start: date,
+    end: date,
+    qty: int,
+    cart: list | None = None,
+    ignore_cart_id: str | None = None,
+) -> bool:
     total = int(product.get("total") or 0)
     if total <= 0:
         return False
     peak = max_overlap_usage(product["id"], start, end, bookings)
+    if cart:
+        peak += max_cart_overlap(cart, product["id"], start, end, ignore_cart_id)
     return peak + qty <= total
+
+
+def get_cart() -> list:
+    cart = session.get("cart")
+    return cart if isinstance(cart, list) else []
+
+
+def save_cart(cart: list) -> None:
+    session["cart"] = cart
+    session.modified = True
+
+
+def cart_count() -> int:
+    return len(get_cart())
+
+
+def cart_totals(cart: list) -> dict:
+    rent = sum(int(i.get("rent_yuan") or 0) for i in cart)
+    deposit = sum(int(i.get("deposit_yuan") or 0) for i in cart)
+    return {"rent": rent, "deposit": deposit, "total": rent + deposit, "items": len(cart)}
+
+
+def parse_rental_form() -> dict:
+    try:
+        qty = int(request.form.get("quantity") or "1")
+    except ValueError:
+        qty = 0
+    return {
+        "product_id": request.form.get("product_id", "").strip(),
+        "start": parse_date(request.form.get("start_date")),
+        "end": parse_date(request.form.get("end_date")),
+        "qty": qty,
+        "customer_name": request.form.get("customer_name", "").strip(),
+        "phone": request.form.get("phone", "").strip(),
+        "address": request.form.get("address", "").strip(),
+        "location_note": request.form.get("location_note", "").strip(),
+        "action": request.form.get("action", "checkout").strip(),
+    }
+
+
+def validate_rental_fields(
+    start: date | None, end: date | None, qty: int
+) -> str | None:
+    if not start or not end or end < start:
+        return "请选择有效的起止日期。"
+    if start < beijing_today():
+        return f"租借开始不能早于今天（{BEIJING_TZ_LABEL}）。"
+    if qty < 1 or qty > 10:
+        return "数量应在 1～10 顶之间。"
+    return None
+
+
+def build_cart_line(prod: dict, start: date, end: date, qty: int) -> dict:
+    cost = compute_rental_cost(start, end, qty)
+    return {
+        "cart_id": uuid.uuid4().hex[:10],
+        "product_id": prod["id"],
+        "product_name": prod["name"],
+        "product_image": prod.get("image", ""),
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "quantity": qty,
+        "days": cost["days"],
+        "rent_yuan": cost["rent"],
+        "deposit_yuan": cost["deposit"],
+        "total_yuan": cost["total"],
+    }
+
+
+def build_booking(
+    prod: dict,
+    start: date,
+    end: date,
+    qty: int,
+    customer_name: str,
+    phone: str,
+    address: str,
+    location_note: str,
+) -> dict:
+    cost = compute_rental_cost(start, end, qty)
+    return {
+        "id": uuid.uuid4().hex[:12],
+        "kind": "rental",
+        "product_id": prod["id"],
+        "product_name": prod["name"],
+        "customer_name": customer_name,
+        "phone": phone,
+        "address": address,
+        "location_note": location_note,
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "quantity": qty,
+        "rent_yuan": cost["rent"],
+        "deposit_yuan": cost["deposit"],
+        "total_yuan": cost["total"],
+        "days": cost["days"],
+        "status": "pending_payment",
+        "created_at": beijing_now_iso(),
+    }
 
 
 def compute_rental_cost(start: date, end: date, qty: int) -> dict:
@@ -446,10 +596,10 @@ def nav_active_key() -> str:
     ep = request.endpoint or ""
     if ep == "index":
         return "home" if request.args.get("tab") == "home" else "menu"
-    if ep in ("product_detail", "product_detail_2", "book_rental_page"):
+    if ep in ("product_detail", "book_rental_page"):
         return "menu"
-    if ep in ("orders_page", "order_detail"):
-        return "orders"
+    if ep in ("cart_page", "cart_checkout_done", "orders_page", "order_detail"):
+        return "cart"
     if ep == "mine_page":
         return "mine"
     return "menu"
@@ -524,9 +674,17 @@ def create_app() -> Flask:
             "STATUS_LABELS": STATUS_LABELS,
             "beijing_today_iso": beijing_today().isoformat(),
             "beijing_tz_label": BEIJING_TZ_LABEL,
+            "cart_count": cart_count,
         }
 
     @app.route("/")
+    def welcome():
+        img = welcome_image_href()
+        if not img:
+            return redirect(url_for("index", tab="menu"))
+        return render_template("welcome.html", welcome_image=img)
+
+    @app.route("/shop")
     def index():
         store = load_store()
         inv = inventory_snapshot(store)
@@ -542,6 +700,76 @@ def create_app() -> Flask:
             signature=signature,
             grouped=grouped,
         )
+
+    @app.route("/cart")
+    def cart_page():
+        cart = get_cart()
+        totals = cart_totals(cart)
+        return render_template("cart.html", cart=cart, totals=totals)
+
+    @app.route("/cart/remove/<cart_id>", methods=["POST"])
+    def cart_remove(cart_id: str):
+        cart = [i for i in get_cart() if i.get("cart_id") != cart_id]
+        save_cart(cart)
+        flash("已从购物车移除。", "ok")
+        return redirect(url_for("cart_page"))
+
+    @app.route("/cart/checkout", methods=["POST"])
+    def cart_checkout():
+        cart = get_cart()
+        if not cart:
+            flash("购物车是空的。", "error")
+            return redirect(url_for("cart_page"))
+
+        name = request.form.get("customer_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        addr = request.form.get("address", "").strip()
+        loc_note = request.form.get("location_note", "").strip()
+        if not name or not phone or not addr:
+            flash("请填写姓名、手机与送货地址。", "error")
+            return redirect(url_for("cart_page"))
+
+        store = load_store()
+        created_ids: list[str] = []
+        pending_bookings = list(store["bookings"])
+
+        for item in cart:
+            pid = item.get("product_id", "")
+            prod = next((p for p in store["products"] if p["id"] == pid), None)
+            if not prod or prod.get("type") != "rental":
+                flash(f"「{item.get('product_name', pid)}」已失效，请移除后重试。", "error")
+                return redirect(url_for("cart_page"))
+            start = parse_date(item.get("start_date"))
+            end = parse_date(item.get("end_date"))
+            qty = int(item.get("quantity") or 1)
+            err = validate_rental_fields(start, end, qty)
+            if err:
+                flash(f"{item.get('product_name')}：{err}", "error")
+                return redirect(url_for("cart_page"))
+            if not rental_available(prod, pending_bookings, start, end, qty):
+                flash(f"「{prod['name']}」所选时段库存不足，请调整购物车。", "error")
+                return redirect(url_for("cart_page"))
+            booking = build_booking(prod, start, end, qty, name, phone, addr, loc_note)
+            pending_bookings.append(booking)
+            created_ids.append(booking["id"])
+
+        store["bookings"] = pending_bookings
+        save_store(store)
+        save_cart([])
+        flash(f"已生成 {len(created_ids)} 笔订单，请分别扫码支付。", "ok")
+        return redirect(url_for("cart_checkout_done", ids=",".join(created_ids)))
+
+    @app.route("/cart/done")
+    def cart_checkout_done():
+        raw = request.args.get("ids", "")
+        ids = [x.strip() for x in raw.split(",") if x.strip()]
+        store = load_store()
+        orders = [
+            b for b in store["bookings"] if b.get("id") in ids and b.get("status") != "cancelled"
+        ]
+        orders = sort_bookings_newest_first(orders)
+        grand = sum(int(o.get("total_yuan") or 0) for o in orders)
+        return render_template("cart_done.html", orders=orders, grand_total=grand)
 
     @app.route("/orders")
     def orders_page():
@@ -624,25 +852,12 @@ def create_app() -> Flask:
             "product_detail.html",
             product=prod,
             inv=inv.get(pid, {}),
-            detail_page=1,
-            detail_image=prod["image"],
+            gallery_images=product_gallery_images(prod),
         )
 
     @app.route("/product/<pid>/detail/2")
     def product_detail_2(pid: str):
-        store = load_store()
-        prod = get_rental_product(store, pid)
-        if not prod:
-            flash("未找到该款式。", "error")
-            return redirect(url_for("index"))
-        inv = {x["id"]: x for x in inventory_snapshot(store)}
-        return render_template(
-            "product_detail.html",
-            product=prod,
-            inv=inv.get(pid, {}),
-            detail_page=2,
-            detail_image=prod["image_2"],
-        )
+        return redirect(url_for("product_detail", pid=pid))
 
     @app.route("/product/<pid>/book")
     def book_rental_page(pid: str):
@@ -661,66 +876,45 @@ def create_app() -> Flask:
     @app.route("/book/rental", methods=["POST"])
     def book_rental():
         store = load_store()
-        pid = request.form.get("product_id", "").strip()
-        prod = next((p for p in store["products"] if p["id"] == pid), None)
-        if not prod or prod.get("type") != "rental":
+        form = parse_rental_form()
+        pid = form["product_id"]
+        prod = get_rental_product(store, pid)
+        if not prod:
             flash("款式无效。", "error")
             return redirect(url_for("index"))
 
-        name = request.form.get("customer_name", "").strip()
-        phone = request.form.get("phone", "").strip()
-        addr = request.form.get("address", "").strip()
-        loc_note = request.form.get("location_note", "").strip()
-        start = parse_date(request.form.get("start_date"))
-        end = parse_date(request.form.get("end_date"))
-        try:
-            qty = int(request.form.get("quantity") or "1")
-        except ValueError:
-            qty = 0
-
-        if not name or not phone or not addr:
-            flash("请填写姓名、手机与送货地址。", "error")
-            return redirect(url_for("book_rental_page", pid=pid))
-        if not start or not end or end < start:
-            flash("请选择有效的起止日期。", "error")
-            return redirect(url_for("book_rental_page", pid=pid))
-        today = beijing_today()
-        if start < today:
-            flash(f"租借开始不能早于今天（{BEIJING_TZ_LABEL}）。", "error")
-            return redirect(url_for("book_rental_page", pid=pid))
-        if qty < 1 or qty > 10:
-            flash("数量应在 1～10 顶之间。", "error")
+        start, end, qty = form["start"], form["end"], form["qty"]
+        err = validate_rental_fields(start, end, qty)
+        if err:
+            flash(err, "error")
             return redirect(url_for("book_rental_page", pid=pid))
 
-        if not rental_available(prod, store["bookings"], start, end, qty):
+        cart = get_cart()
+        if not rental_available(prod, store["bookings"], start, end, qty, cart=cart):
             flash("所选时段库存不足，请调整日期或数量。", "error")
             return redirect(url_for("book_rental_page", pid=pid))
 
-        cost = compute_rental_cost(start, end, qty)
-        bid = uuid.uuid4().hex[:12]
-        booking = {
-            "id": bid,
-            "kind": "rental",
-            "product_id": pid,
-            "product_name": prod["name"],
-            "customer_name": name,
-            "phone": phone,
-            "address": addr,
-            "location_note": loc_note,
-            "start_date": start.isoformat(),
-            "end_date": end.isoformat(),
-            "quantity": qty,
-            "rent_yuan": cost["rent"],
-            "deposit_yuan": cost["deposit"],
-            "total_yuan": cost["total"],
-            "days": cost["days"],
-            "status": "pending_payment",
-            "created_at": beijing_now_iso(),
-        }
+        if form["action"] == "cart":
+            cart.append(build_cart_line(prod, start, end, qty))
+            save_cart(cart)
+            flash("已加入购物车。", "ok")
+            return redirect(url_for("cart_page"))
+
+        name, phone, addr, loc_note = (
+            form["customer_name"],
+            form["phone"],
+            form["address"],
+            form["location_note"],
+        )
+        if not name or not phone or not addr:
+            flash("请填写姓名、手机与送货地址。", "error")
+            return redirect(url_for("book_rental_page", pid=pid))
+
+        booking = build_booking(prod, start, end, qty, name, phone, addr, loc_note)
         store["bookings"].append(booking)
         save_store(store)
         flash("预定已创建，请扫码支付。", "ok")
-        return redirect(url_for("order_detail", bid=bid))
+        return redirect(url_for("order_detail", bid=booking["id"]))
 
     @app.route("/order/<bid>")
     def order_detail(bid: str):

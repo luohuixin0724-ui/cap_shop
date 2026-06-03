@@ -31,9 +31,12 @@
         <span class="tab-ico" aria-hidden="true">🎓</span>
         <span>点单</span>
       </a>
-      <a class="tab {% if nav_active() == 'orders' %}active{% endif %}" href="{{ url_for('orders_page') }}">
-        <span class="tab-ico" aria-hidden="true">📋</span>
-        <span>订单</span>
+      <a class="tab {% if nav_active() == 'cart' %}active{% endif %}" href="{{ url_for('cart_page') }}">
+        <span class="tab-ico tab-ico-cart" aria-hidden="true">🛒</span>
+        <span>购物车</span>
+        {% if cart_count() > 0 %}
+        <span class="tab-badge">{{ cart_count() }}</span>
+        {% endif %}
       </a>
       <a class="tab {% if nav_active() == 'mine' %}active{% endif %}" href="{{ url_for('mine_page') }}">
         <span class="tab-ico" aria-hidden="true">👤</span>

@@ -39,25 +39,31 @@
       <label for="quantity">数量（顶）</label>
       <input type="number" id="quantity" name="quantity" min="1" max="10" value="1" required />
     </div>
-    <div class="form-row">
+    <div class="form-row book-contact">
       <label for="customer_name">收货人姓名</label>
-      <input type="text" id="customer_name" name="customer_name" required />
+      <input type="text" id="customer_name" name="customer_name" />
     </div>
-    <div class="form-row">
+    <div class="form-row book-contact">
       <label for="phone">手机号</label>
-      <input type="tel" id="phone" name="phone" required />
+      <input type="tel" id="phone" name="phone" />
     </div>
-    <div class="form-row">
+    <div class="form-row book-contact">
       <label for="address">收货地址（送货上门）</label>
-      <textarea id="address" name="address" required placeholder="省市区 + 详细门牌"></textarea>
+      <textarea id="address" name="address" placeholder="立即下单时必填；加入购物车可在结算页填写"></textarea>
     </div>
-    <div class="form-row">
+    <div class="form-row book-contact">
       <label for="location_note">送达说明（可选）</label>
       <input type="text" id="location_note" name="location_note" placeholder="校区/校门/楼栋等" />
     </div>
-    <button class="btn-block" type="submit">提交订单并支付</button>
+    <div class="btn-row-2">
+      <button class="btn-block secondary" type="submit" name="action" value="cart">加入购物车</button>
+      <button class="btn-block" type="submit" name="action" value="checkout">立即下单</button>
+    </div>
   </form>
 </div>
+<p class="muted-p book-cart-hint">
+  可先加入购物车，在底部 <a href="{{ url_for('cart_page') }}">购物车</a> 合并结算。
+</p>
 
 <script>
   (function () {
@@ -77,6 +83,21 @@
       } catch (e) {}
     }
     syncBeijingDates();
+
+    const checkoutBtn = document.querySelector('button[value="checkout"]');
+    const contactFields = document.querySelectorAll(".book-contact input, .book-contact textarea");
+    if (checkoutBtn && contactFields.length) {
+      checkoutBtn.addEventListener("click", function () {
+        contactFields.forEach(function (el) {
+          el.required = true;
+        });
+      });
+      document.querySelector('button[value="cart"]')?.addEventListener("click", function () {
+        contactFields.forEach(function (el) {
+          el.required = false;
+        });
+      });
+    }
 
     async function tick() {
       try {
