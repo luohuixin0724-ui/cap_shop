@@ -11,16 +11,22 @@
 <section class="detail-hero">
   <div class="detail-gallery-wrap">
     <div class="detail-gallery" id="detail-gallery" aria-label="商品图片，左右滑动切换">
-      {% for img in gallery_images %}
+      {% for item in gallery_items %}
       <figure class="detail-slide img-portrait">
-        <button type="button" class="detail-zoom-btn" data-src="{{ img }}" aria-label="放大查看第 {{ loop.index }} 张图">
-          <img src="{{ img }}" alt="{{ product.name }} — 图 {{ loop.index }}" width="360" height="480" loading="lazy" />
+        <button type="button" class="detail-zoom-btn" data-src="{{ item.full }}" aria-label="放大查看第 {{ loop.index }} 张图">
+          <img
+            src="{{ item.medium }}"
+            alt="{{ product.name }} — 图 {{ loop.index }}"
+            width="360"
+            height="480"
+            {% if loop.first %}loading="eager" fetchpriority="high" decoding="async"{% else %}loading="lazy" decoding="async"{% endif %}
+          />
         </button>
       </figure>
       {% endfor %}
     </div>
     <div class="gallery-dots" id="gallery-dots" aria-hidden="true">
-      {% for img in gallery_images %}
+      {% for item in gallery_items %}
       <span class="gallery-dot{% if loop.first %} active{% endif %}"></span>
       {% endfor %}
     </div>
@@ -43,7 +49,7 @@
 <div class="lightbox" id="lightbox" hidden aria-modal="true" role="dialog" aria-label="放大查看">
   <button type="button" class="lightbox-backdrop" data-lightbox-close aria-label="关闭"></button>
   <div class="lightbox-stage">
-    <img id="lightbox-img" src="" alt="" />
+    <img id="lightbox-img" src="" alt="" decoding="async" />
   </div>
   <button type="button" class="lightbox-close" data-lightbox-close aria-label="关闭">×</button>
 </div>

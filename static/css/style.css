@@ -665,6 +665,32 @@ body.lightbox-open {
   cursor: pointer;
 }
 
+.nav-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(250, 247, 242, 0.55);
+  pointer-events: none;
+}
+
+.nav-loading[hidden] {
+  display: none !important;
+}
+
+.nav-loading-inner {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
 .detail-text {
   padding: 12px 2px 4px;
 }

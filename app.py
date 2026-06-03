@@ -34,6 +34,13 @@ from flask import (
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "data" / "store.json"
 
+from image_cache import (
+    attach_image_variants,
+    ensure_optimized,
+    is_raster_path,
+    warm_catalog_images,
+)
+
 # 全站时间以北京时间（东八区 / Asia/Shanghai）为准
 BEIJING_TZ = _beijing_tz()
 BEIJING_TZ_LABEL = "北京时间"
@@ -271,13 +278,25 @@ def static_fallback_href(product_id: str) -> str:
 
 def enrich_product_images(prod: dict) -> dict:
     row = dict(prod)
-    if str(row.get("image", "")).startswith("/static/"):
+    if row.get("image_medium"):
         return row
     pid = str(row["id"])
     img1 = row.get("image") or f"img/caps/{pid}.svg"
     img2 = row.get("image_2") or img1
-    row["image"] = static_image_href(img1) if static_image_exists(img1) else static_fallback_href(pid)
-    row["image_2"] = static_image_href(img2) if static_image_exists(img2) else row["image"]
+    if is_raster_path(img1) and static_image_exists(img1):
+        attach_image_variants(row, img1, "image")
+    else:
+        href = static_image_href(img1) if static_image_exists(img1) else static_fallback_href(pid)
+        row["image"] = row["image_medium"] = row["image_full"] = href
+    if img2 != img1 and is_raster_path(img2) and static_image_exists(img2):
+        attach_image_variants(row, img2, "image_2")
+    elif img2 != img1 and static_image_exists(img2):
+        href2 = static_image_href(img2)
+        row["image_2"] = row["image_2_medium"] = row["image_2_full"] = href2
+    else:
+        row["image_2"] = row.get("image_2", row["image"])
+        row["image_2_medium"] = row.get("image_2_medium", row["image_medium"])
+        row["image_2_full"] = row.get("image_2_full", row["image_full"])
     return row
 
 
@@ -302,21 +321,23 @@ def get_rental_product(store: dict, pid: str) -> dict | None:
     return enrich_product_images(prod)
 
 
-def product_gallery_images(prod: dict) -> list[str]:
-    images: list[str] = []
-    for key in ("image", "image_2"):
-        url = prod.get(key)
-        if url and url not in images:
-            images.append(str(url))
-    if not images:
-        images.append(static_fallback_href(str(prod["id"])))
-    return images
+def product_gallery_items(prod: dict) -> list[dict]:
+    items: list[dict] = []
+    for suffix in ("", "_2"):
+        medium = prod.get(f"image{suffix}_medium") or prod.get(f"image{suffix}")
+        full = prod.get(f"image{suffix}_full") or medium
+        if medium and not any(x["medium"] == medium for x in items):
+            items.append({"medium": str(medium), "full": str(full)})
+    if not items:
+        fb = static_fallback_href(str(prod["id"]))
+        items.append({"medium": fb, "full": fb})
+    return items
 
 
 def welcome_image_href() -> str | None:
-    if static_image_exists(FENGYE_IMAGE):
-        return static_image_href(FENGYE_IMAGE)
-    return None
+    if not static_image_exists(FENGYE_IMAGE):
+        return None
+    return ensure_optimized(FENGYE_IMAGE, "welcome") or static_image_href(FENGYE_IMAGE)
 
 
 def load_store() -> dict:
@@ -657,6 +678,20 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-bachelor-cap-secret")
 
+    import threading
+
+    def _warm_images() -> None:
+        warm_catalog_images(DEFAULT_PRODUCTS, [FENGYE_IMAGE])
+
+    threading.Thread(target=_warm_images, daemon=True).start()
+
+    @app.after_request
+    def static_cache_headers(response):
+        if request.path.startswith("/static/img/_cache/"):
+            response.cache_control.max_age = 31536000
+            response.cache_control.public = True
+        return response
+
     @app.template_filter("fmt_bj")
     def fmt_bj_filter(value: str | None) -> str:
         return format_beijing_time(value)
@@ -852,7 +887,7 @@ def create_app() -> Flask:
             "product_detail.html",
             product=prod,
             inv=inv.get(pid, {}),
-            gallery_images=product_gallery_images(prod),
+            gallery_items=product_gallery_items(prod),
         )
 
     @app.route("/product/<pid>/detail/2")

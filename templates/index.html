@@ -30,8 +30,8 @@
   <div class="sig-scroll">
     {% for p in signature %}
     {% set iv = inv_map.get(p.id, {}) %}
-    <a class="sig-card" href="{{ url_for('product_detail', pid=p.id) }}">
-      <div class="sig-img img-43"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" width="120" height="90" /></div>
+    <a class="sig-card prefetch-link" href="{{ url_for('product_detail', pid=p.id) }}" data-prefetch-img="{{ p.image_medium or p.image }}">
+      <div class="sig-img img-43"><img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" decoding="async" width="120" height="90" /></div>
       <div class="sig-name">{{ p.name }}</div>
       <div class="sig-price">¥{{ RENT_PER_DAY }}/天起</div>
       <div class="sig-meta inv-sig" data-pid="{{ p.id }}">余 {{ iv.remaining_hint or 0 }}</div>
@@ -53,9 +53,9 @@
       <header class="cat-title">{{ cat.name }}</header>
       {% for p in plist %}
       {% set iv = inv_map.get(p.id, {}) %}
-      <a class="sku-row" href="{{ url_for('product_detail', pid=p.id) }}" data-pid="{{ p.id }}">
+      <a class="sku-row prefetch-link" href="{{ url_for('product_detail', pid=p.id) }}" data-pid="{{ p.id }}" data-prefetch-img="{{ p.image_medium or p.image }}">
         <div class="sku-thumb img-43">
-          <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" width="88" height="66" />
+          <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy" decoding="async" width="88" height="66" />
         </div>
         <div class="sku-main">
           <div class="sku-tags">

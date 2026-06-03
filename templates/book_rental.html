@@ -10,7 +10,7 @@
 {% block body %}
 <section class="detail-hero detail-hero--compact">
   <div class="detail-img img-43 detail-img--compact">
-    <img src="{{ product.image }}" alt="{{ product.name }}" width="160" height="120" />
+    <img src="{{ product.image_medium or product.image }}" alt="{{ product.name }}" width="160" height="120" decoding="async" />
   </div>
   <div class="detail-text">
     <h1 class="detail-name">{{ product.name }}</h1>
