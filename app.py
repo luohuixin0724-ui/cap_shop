@@ -788,7 +788,6 @@ def create_app() -> Flask:
             inv_map=inv_map,
             signature=signature,
             grouped=grouped,
-            cover_image=welcome_image_href(),
         )
 
     @app.route("/cart")

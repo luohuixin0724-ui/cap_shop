@@ -74,20 +74,6 @@ a {
   border-color: #bbf7d0;
 }
 
-.shop-cover {
-  margin: 0;
-  line-height: 0;
-  background: #1a1612;
-}
-
-.shop-cover-img {
-  display: block;
-  width: 100%;
-  max-height: min(52vh, 420px);
-  object-fit: cover;
-  object-position: center top;
-}
-
 .shop-hero {
   padding: 14px 14px 6px;
 }
@@ -916,12 +902,32 @@ body.mini-shell > .page-scroll:has(.page-fill) {
 }
 
 .page-fill__foot {
-  flex-shrink: 0;
-  padding: 12px 2px 4px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tab-h) + var(--safe-b) + 12px);
+  z-index: 45;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+  pointer-events: none;
 }
 
 .page-fill__foot .btn-block {
-  margin-top: 0;
+  pointer-events: auto;
+  width: auto;
+  min-width: min(68vw, 260px);
+  max-width: 320px;
+  margin: 0;
+  padding: 12px 28px;
+  border-radius: 999px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(92, 56, 10, 0.25);
+}
+
+.page-fill:has(.page-fill__foot) {
+  padding-bottom: calc(var(--tab-h) + 72px + var(--safe-b));
 }
 
 .cart-done-card {
