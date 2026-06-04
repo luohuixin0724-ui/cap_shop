@@ -70,15 +70,25 @@ from image_cache import (
 BEIJING_TZ = _beijing_tz()
 BEIJING_TZ_LABEL = "北京时间"
 
-RENT_PER_DAY = 20
+RENT_PER_DAY = 15
 DEPOSIT_PER_UNIT = 30
 
 SHOP_NAME = "花枝鼠の学士帽"
 SHOP_ADDRESS = "每天10:00配送至宿舍楼下，可自取"
-SHOP_NOTICE = "租借为实物档期制：支付后锁定排期。"
+SHOP_NOTICE = "每客消毒，喷香香，持续生产中……。"
 
 # 进站导览图（放于 static/img/fengye.png）
 FENGYE_IMAGE = "img/fengye.png"
+
+# 客服微信图（保存订单确认弹窗 / 订单完成页）：static/img/wechat_service.png 等
+WECHAT_SERVICE_IMAGE_CANDIDATES = (
+    "wechat_service.png",
+    "wechat_service.jpg",
+    "wechat_service.jpeg",
+    "wechat_service.webp",
+    "wechat.png",
+    "wechat.jpg",
+)
 
 # 商家账单：在「我的」页弹窗登录；部署请改 ADMIN_USERNAME / ADMIN_PASSWORD
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "shopowner")
@@ -122,7 +132,7 @@ DEFAULT_PRODUCTS = [
         "image_2": "img/caps/ch1_2.jpg",
         "desc": "春日繁花簪花，层次饱满温柔出片",
         "tags": ["热销", "店长推荐"],
-        "monthly_sales": 186,
+        "monthly_sales": 0,
         "total": 1,
     },
     {
@@ -134,7 +144,7 @@ DEFAULT_PRODUCTS = [
         "image_2": "img/caps/ch2_2.jpg",
         "desc": "蓝调凰羽展翼造型，清冷又上镜",
         "tags": ["必租"],
-        "monthly_sales": 142,
+        "monthly_sales": 0,
         "total": 1,
     },
     {
@@ -369,6 +379,15 @@ def welcome_image_href() -> str | None:
     return ensure_optimized(FENGYE_IMAGE, "welcome") or static_image_href(FENGYE_IMAGE)
 
 
+def service_wechat_image_url() -> str | None:
+    """客服微信二维码静态路径（供模板 url_for static）。"""
+    img_dir = BASE_DIR / "static" / "img"
+    for name in WECHAT_SERVICE_IMAGE_CANDIDATES:
+        if (img_dir / name).is_file():
+            return url_for("static", filename=f"img/{name}")
+    return None
+
+
 def load_store() -> dict:
     ensure_dirs()
     if not DATA_PATH.exists():
@@ -509,7 +528,7 @@ def parse_rental_form() -> dict:
         "phone": request.form.get("phone", "").strip(),
         "address": request.form.get("address", "").strip(),
         "location_note": request.form.get("location_note", "").strip(),
-        "action": request.form.get("action", "checkout").strip(),
+        "action": request.form.get("action", "save_order").strip(),
     }
 
 
@@ -810,12 +829,11 @@ def create_app() -> Flask:
             flash("购物车是空的。", "error")
             return redirect(url_for("cart_page"))
 
-        name = request.form.get("customer_name", "").strip()
         phone = request.form.get("phone", "").strip()
         addr = request.form.get("address", "").strip()
         loc_note = request.form.get("location_note", "").strip()
-        if not name or not phone or not addr:
-            flash("请填写姓名、手机与送货地址。", "error")
+        if not phone or not addr:
+            flash("请填写手机与送货地址。", "error")
             return redirect(url_for("cart_page"))
 
         store = load_store()
@@ -838,7 +856,7 @@ def create_app() -> Flask:
             if not rental_available(prod, pending_bookings, start, end, qty):
                 flash(f"「{prod['name']}」所选时段库存不足，请调整购物车。", "error")
                 return redirect(url_for("cart_page"))
-            booking = build_booking(prod, start, end, qty, name, phone, addr, loc_note)
+            booking = build_booking(prod, start, end, qty, "", phone, addr, loc_note)
             pending_bookings.append(booking)
             created_ids.append(booking["id"])
 
@@ -931,6 +949,30 @@ def create_app() -> Flask:
         payload["items"] = inventory_snapshot(store)
         return jsonify(payload)
 
+    @app.route("/api/rental-quote")
+    def api_rental_quote():
+        start = parse_date(request.args.get("start_date"))
+        end = parse_date(request.args.get("end_date"))
+        try:
+            qty = int(request.args.get("quantity") or "1")
+        except ValueError:
+            qty = 0
+        err = validate_rental_fields(start, end, qty)
+        if err:
+            return jsonify({"ok": False, "error": err}), 400
+        cost = compute_rental_cost(start, end, qty)
+        return jsonify(
+            {
+                "ok": True,
+                "days": cost["days"],
+                "rent_yuan": cost["rent"],
+                "deposit_yuan": cost["deposit"],
+                "total_yuan": cost["total"],
+                "rent_per_day": RENT_PER_DAY,
+                "deposit_per_unit": DEPOSIT_PER_UNIT,
+            }
+        )
+
     @app.route("/product/<pid>")
     def product_detail(pid: str):
         store = load_store()
@@ -958,10 +1000,13 @@ def create_app() -> Flask:
             flash("未找到该款式。", "error")
             return redirect(url_for("index"))
         inv = {x["id"]: x for x in inventory_snapshot(store)}
+        wechat_url = service_wechat_image_url()
         return render_template(
             "book_rental.html",
             product=prod,
             inv=inv.get(pid, {}),
+            wechat_service_url=wechat_url,
+            wechat_service_placeholder=url_for("static", filename="img/payment_placeholder.svg"),
         )
 
     @app.route("/book/rental", methods=["POST"])
@@ -991,22 +1036,21 @@ def create_app() -> Flask:
             flash("已加入购物车。", "ok")
             return redirect(url_for("cart_page"))
 
-        name, phone, addr, loc_note = (
-            form["customer_name"],
-            form["phone"],
-            form["address"],
-            form["location_note"],
-        )
-        if not name or not phone or not addr:
-            flash("请填写姓名、手机与送货地址。", "error")
+        if form["action"] not in ("save_order", "checkout"):
+            flash("无效操作。", "error")
             return redirect(url_for("book_rental_page", pid=pid))
 
-        booking = build_booking(prod, start, end, qty, name, phone, addr, loc_note)
+        phone, addr, loc_note = form["phone"], form["address"], form["location_note"]
+        if not phone or not addr:
+            flash("请填写手机与送货地址。", "error")
+            return redirect(url_for("book_rental_page", pid=pid))
+
+        booking = build_booking(prod, start, end, qty, "", phone, addr, loc_note)
         store["bookings"].append(booking)
         save_store(store)
         notify_orders_async([booking], SHOP_NAME)
-        flash("预定已创建，请扫码支付。", "ok")
-        return redirect(url_for("order_detail", bid=booking["id"]))
+        flash("订单已保存，请添加客服微信联系确认。", "ok")
+        return redirect(url_for("order_detail", bid=booking["id"], saved=1))
 
     @app.route("/order/<bid>")
     def order_detail(bid: str):
@@ -1028,7 +1072,16 @@ def create_app() -> Flask:
                 break
         if qr_url is None:
             qr_url = url_for("static", filename="img/payment_placeholder.svg")
-        return render_template("order.html", order=booking, qr_url=qr_url)
+        order_saved = request.args.get("saved") == "1"
+        wechat_url = service_wechat_image_url()
+        return render_template(
+            "order.html",
+            order=booking,
+            qr_url=qr_url,
+            order_saved=order_saved,
+            wechat_service_url=wechat_url,
+            wechat_service_placeholder=url_for("static", filename="img/payment_placeholder.svg"),
+        )
 
     @app.route(f"/{ADMIN_SLUG}/login", methods=["GET", "POST"])
     @app.route(f"/{ADMIN_SLUG}")

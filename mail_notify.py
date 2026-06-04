@@ -49,7 +49,6 @@ def format_order_block(booking: dict, shop_name: str) -> str:
         f"数量：{booking.get('quantity', 1)} 顶",
         f"租金：{booking.get('rent_yuan', 0)} 元 · 押金：{booking.get('deposit_yuan', 0)} 元",
         f"应付合计：{booking.get('total_yuan', 0)} 元",
-        f"顾客：{booking.get('customer_name', '')}",
         f"手机：{booking.get('phone', '')}",
         f"地址：{booking.get('address', '')}",
     ]

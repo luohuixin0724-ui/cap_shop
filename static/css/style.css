@@ -605,6 +605,19 @@ body.welcome-body {
 
 .detail-actions {
   margin-top: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.detail-actions .btn-block {
+  width: auto;
+  min-width: min(68vw, 260px);
+  max-width: 320px;
+  margin-top: 0;
+  padding: 12px 32px;
+  border-radius: 999px;
+  text-align: center;
+  display: inline-block;
 }
 
 body.lightbox-open {
@@ -1054,6 +1067,163 @@ body.mini-shell > .page-scroll:has(.page-fill) {
     margin-left: auto;
     margin-right: auto;
   }
+}
+
+/* —— 保存订单确认弹窗 —— */
+.save-order-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.save-order-modal.is-open {
+  display: flex;
+}
+
+.save-order-modal[hidden] {
+  display: none !important;
+}
+
+body.save-order-modal-open {
+  overflow: hidden;
+}
+
+.save-order-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 27, 22, 0.45);
+}
+
+.save-order-modal-sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(92vh, 720px);
+  overflow: auto;
+  margin: 0 auto;
+  padding: 0 0 calc(12px + var(--safe-b));
+  border-radius: 20px 20px 0 0;
+  background: var(--bg-2);
+  box-shadow: 0 -8px 32px rgba(31, 27, 22, 0.12);
+}
+
+.save-order-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--bg-2);
+  z-index: 2;
+}
+
+.save-order-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.save-order-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.save-order-modal-body {
+  padding: 12px 16px 8px;
+}
+
+.save-order-product {
+  margin: 0 0 10px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.save-order-confirm-list {
+  margin: 0 0 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid #efe8dc;
+}
+
+.save-order-confirm-row {
+  display: grid;
+  grid-template-columns: 4.5em 1fr;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.save-order-confirm-row:last-child {
+  margin-bottom: 0;
+}
+
+.save-order-confirm-row dt {
+  margin: 0;
+  color: #9a9288;
+  font-weight: 700;
+}
+
+.save-order-confirm-row dd {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.pay-sum-inline {
+  color: #b45309;
+  font-size: 17px;
+}
+
+.save-order-wechat-k {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.save-order-wechat-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.save-order-wechat-wrap img {
+  width: min(200px, 56vw);
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.save-order-wechat-hint {
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.save-order-error {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+#btn-confirm-save-order {
+  margin-top: 4px;
 }
 
 /* —— 我的 · 账单管理弹窗 —— */
