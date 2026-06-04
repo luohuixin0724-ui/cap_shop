@@ -76,6 +76,8 @@ DEPOSIT_PER_UNIT = 30
 SHOP_NAME = "花枝鼠の学士帽"
 SHOP_ADDRESS = "每天10:00配送至宿舍楼下，可自取"
 SHOP_NOTICE = "每客消毒，喷香香，持续生产中……。"
+SHOP_WECHAT_ID = "xx_542968_xx"
+SHOP_DELIVERY_SCOPE = "上海大学宝山校区"
 
 # 进站导览图（放于 static/img/fengye.png）
 FENGYE_IMAGE = "img/fengye.png"
@@ -777,6 +779,8 @@ def create_app() -> Flask:
             "SHOP_NAME": SHOP_NAME,
             "SHOP_ADDRESS": SHOP_ADDRESS,
             "SHOP_NOTICE": SHOP_NOTICE,
+            "SHOP_WECHAT_ID": SHOP_WECHAT_ID,
+            "SHOP_DELIVERY_SCOPE": SHOP_DELIVERY_SCOPE,
             "CATEGORIES": CATEGORIES,
             "nav_active": nav_active_key,
             "STATUS_LABELS": STATUS_LABELS,
