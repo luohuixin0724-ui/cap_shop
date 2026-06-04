@@ -23,11 +23,7 @@
     </main>
 
     <nav class="tabbar" aria-label="底部导航">
-      <a class="tab {% if nav_active() == 'home' %}active{% endif %}" href="{{ url_for('index', tab='home') }}">
-        <span class="tab-ico" aria-hidden="true">🏠</span>
-        <span>首页</span>
-      </a>
-      <a class="tab {% if nav_active() == 'menu' %}active{% endif %}" href="{{ url_for('index', tab='menu') }}">
+      <a class="tab {% if nav_active() == 'menu' %}active{% endif %}" href="{{ url_for('index') }}">
         <span class="tab-ico" aria-hidden="true">🎓</span>
         <span>点单</span>
       </a>

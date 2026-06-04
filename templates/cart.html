@@ -2,17 +2,21 @@
 {% block title %}购物车 — {{ SHOP_NAME }}{% endblock %}
 {% block topbar %}
 <div class="subbar">
-  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <a class="subbar-back" href="{{ url_for('index') }}">返回</a>
   <span class="subbar-title">购物车</span>
   <span class="subbar-spacer"></span>
 </div>
 {% endblock %}
 {% block body %}
 {% if not cart %}
-<div class="sheet plain cart-empty">
-  <h1 class="page-h1">购物车是空的</h1>
-  <p class="muted-p">去点单选款式，填写租期后点击「加入购物车」。</p>
-  <a class="btn-block" href="{{ url_for('index', tab='menu') }}#menu">去点单</a>
+<div class="page-fill">
+  <div class="sheet plain cart-empty page-fill__main">
+    <h1 class="page-h1">购物车是空的</h1>
+    <p class="muted-p">去点单选款式，填写租期后点击「加入购物车」。</p>
+  </div>
+  <div class="page-fill__foot">
+    <a class="btn-block" href="{{ url_for('index') }}">去点单</a>
+  </div>
 </div>
 {% else %}
 <div class="cart-list">
@@ -67,7 +71,9 @@
   </form>
 </div>
 {% endif %}
+{% if cart %}
 <p class="cart-foot muted-p">
   <a href="{{ url_for('orders_page') }}">订单与支付说明</a>
 </p>
+{% endif %}
 {% endblock %}

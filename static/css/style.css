@@ -878,7 +878,36 @@ textarea {
 }
 
 .cart-empty {
-  margin: 12px;
+  margin: 0;
+}
+
+/* 购物车 / 我的：短内容页，主按钮贴底（在底部导航上方） */
+body.mini-shell > .page-scroll:has(.page-fill) {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 12px 8px;
+  box-sizing: border-box;
+}
+
+.page-fill__main {
+  flex: 1 1 auto;
+  margin: 12px 2px 0;
+}
+
+.page-fill__foot {
+  flex-shrink: 0;
+  padding: 12px 2px 4px;
+}
+
+.page-fill__foot .btn-block {
+  margin-top: 0;
 }
 
 .cart-done-card {

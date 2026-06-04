@@ -1,0 +1,69 @@
+{
+  "_help": "在此填写商品名称与分类。图片文件名须为 ch1_1.jpg、ch1_2.jpg（放在 static/img/img/）。category_id 可选：zan, miaoyin, chouxiang, zhonggong。也可建子文件夹如 static/img/img/zan/ch1_1.jpg",
+  "products": {
+    "ch1": {
+      "name": "春野粉簪",
+      "category_id": "zan",
+      "desc": "侧簪层次丰富，粉调温柔出片",
+      "tags": [
+        "热销",
+        "店长推荐"
+      ],
+      "total": 1
+    },
+    "ch2": {
+      "name": "铃兰垂丝",
+      "category_id": "zan",
+      "desc": "垂坠铃兰造型，清新学院感",
+      "tags": [
+        "必租"
+      ],
+      "total": 1
+    },
+    "ch3": {
+      "name": "山茶绣球",
+      "category_id": "zan",
+      "desc": "围边山茶 + 绣球体量感",
+      "tags": [
+        "上新"
+      ],
+      "total": 1
+    },
+    "ch4": {
+      "name": "银铃叮当",
+      "category_id": "miaoyin",
+      "desc": "苗银流苏细节，行走有轻响",
+      "tags": [
+        "民族风"
+      ],
+      "total": 1
+    },
+    "ch5": {
+      "name": "孔雀碧羽",
+      "category_id": "miaoyin",
+      "desc": "碧色羽饰 + 银饰层次",
+      "tags": [
+        "出片"
+      ],
+      "total": 1
+    },
+    "ch6": {
+      "name": "红瑙璎珞",
+      "category_id": "miaoyin",
+      "desc": "玛瑙红珠璎珞，气场更足",
+      "tags": [
+        "重工银饰"
+      ],
+      "total": 1
+    },
+    "ch7": {
+      "name": "水墨雾面",
+      "category_id": "chouxiang",
+      "desc": "黑白渐变雾面，像画里走出来",
+      "tags": [
+        "艺术感"
+      ],
+      "total": 1
+    }
+  }
+}

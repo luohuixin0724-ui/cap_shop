@@ -2,7 +2,7 @@
 {% block title %}{{ product.name }} — 详情{% endblock %}
 {% block topbar %}
 <div class="subbar">
-  <a class="subbar-back" href="{{ url_for('index', tab='menu') }}#menu">返回</a>
+  <a class="subbar-back" href="{{ url_for('index') }}#menu">返回</a>
   <span class="subbar-title">商品详情</span>
   <span class="subbar-spacer"></span>
 </div>
@@ -37,7 +37,7 @@
     <p class="detail-desc">{{ product.desc }}</p>
     <div class="detail-price">¥{{ RENT_PER_DAY }}/天 · 押金 ¥{{ DEPOSIT_PER_UNIT }}/顶</div>
     <p class="detail-inv inv-line" data-inv-inline>
-      库存 <strong>{{ inv.total or 0 }}</strong> · 已订峰值 <strong>{{ inv.peak_booked or 0 }}</strong> · 余 <strong>{{ inv.remaining_hint or 0 }}</strong>
+      库存 <strong>{{ inv.total or 0 }}</strong> · 已订次数 <strong>{{ inv.booked_count or 0 }}</strong> · 余 <strong>{{ inv.remaining_hint or 0 }}</strong>
     </p>
   </div>
 </section>
@@ -68,8 +68,8 @@
         line.innerHTML =
           "库存 <strong>" +
           (item.total ?? 0) +
-          "</strong> · 已订峰值 <strong>" +
-          (item.peak_booked ?? 0) +
+          "</strong> · 已订次数 <strong>" +
+          (item.booked_count ?? 0) +
           "</strong> · 余 <strong>" +
           (item.remaining_hint ?? 0) +
           "</strong>";

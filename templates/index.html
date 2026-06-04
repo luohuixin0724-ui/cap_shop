@@ -71,7 +71,7 @@
           </div>
           <div class="sku-stock sku-line">
             库存 <span class="mono-strong" data-k="total">{{ iv.total or 0 }}</span>
-            · 已订峰值 <span class="mono-strong" data-k="peak">{{ iv.peak_booked or 0 }}</span>
+            · 已订次数 <span class="mono-strong" data-k="booked">{{ iv.booked_count or 0 }}</span>
             · 余 <span class="mono-strong" data-k="rem">{{ iv.remaining_hint or 0 }}</span>
           </div>
         </div>
@@ -136,10 +136,10 @@
           const line = row.querySelector(".sku-line");
           if (!line) return;
           const t = line.querySelector('[data-k="total"]');
-          const pk = line.querySelector('[data-k="peak"]');
+          const bc = line.querySelector('[data-k="booked"]');
           const r = line.querySelector('[data-k="rem"]');
           if (t) t.textContent = it.total ?? 0;
-          if (pk) pk.textContent = it.peak_booked ?? 0;
+          if (bc) bc.textContent = it.booked_count ?? 0;
           if (r) r.textContent = it.remaining_hint ?? 0;
         });
       } catch (err) {}
@@ -148,14 +148,4 @@
   })();
 </script>
 
-<script>
-  (function () {
-    const tab = new URLSearchParams(location.search).get("tab") || "menu";
-    if (tab === "menu") {
-      requestAnimationFrame(() => document.getElementById("menu")?.scrollIntoView({ behavior: "auto", block: "start" }));
-    } else {
-      requestAnimationFrame(() => document.getElementById("top")?.scrollIntoView({ behavior: "auto", block: "start" }));
-    }
-  })();
-</script>
 {% endblock %}

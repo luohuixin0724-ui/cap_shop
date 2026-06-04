@@ -36,6 +36,29 @@ from flask import (
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "data" / "store.json"
 
+
+def load_local_env() -> None:
+    """读取项目根目录 .env（KEY=VALUE），不覆盖已有环境变量。"""
+    env_file = BASE_DIR / ".env"
+    if not env_file.is_file():
+        return
+    try:
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key, val = key.strip(), val.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = val
+    except OSError:
+        pass
+
+
+load_local_env()
+
+from catalog_scan import build_catalog_from_images, save_catalog_meta_template
+from mail_notify import notify_orders_async
 from image_cache import (
     attach_image_variants,
     ensure_optimized,
@@ -100,7 +123,7 @@ DEFAULT_PRODUCTS = [
         "desc": "侧簪层次丰富，粉调温柔出片",
         "tags": ["热销", "店长推荐"],
         "monthly_sales": 186,
-        "total": 25,
+        "total": 1,
     },
     {
         "id": "r02",
@@ -112,7 +135,7 @@ DEFAULT_PRODUCTS = [
         "desc": "垂坠铃兰造型，清新学院感",
         "tags": ["必租"],
         "monthly_sales": 142,
-        "total": 20,
+        "total": 1,
     },
     {
         "id": "r03",
@@ -124,7 +147,7 @@ DEFAULT_PRODUCTS = [
         "desc": "围边山茶 + 绣球体量感",
         "tags": ["上新"],
         "monthly_sales": 96,
-        "total": 18,
+        "total": 1,
     },
     {
         "id": "r04",
@@ -136,7 +159,7 @@ DEFAULT_PRODUCTS = [
         "desc": "苗银流苏细节，行走有轻响",
         "tags": ["民族风"],
         "monthly_sales": 131,
-        "total": 22,
+        "total": 1,
     },
     {
         "id": "r05",
@@ -148,7 +171,7 @@ DEFAULT_PRODUCTS = [
         "desc": "碧色羽饰 + 银饰层次",
         "tags": ["出片"],
         "monthly_sales": 118,
-        "total": 18,
+        "total": 1,
     },
     {
         "id": "r06",
@@ -160,7 +183,7 @@ DEFAULT_PRODUCTS = [
         "desc": "玛瑙红珠璎珞，气场更足",
         "tags": ["重工银饰"],
         "monthly_sales": 104,
-        "total": 16,
+        "total": 1,
     },
     {
         "id": "r07",
@@ -172,7 +195,7 @@ DEFAULT_PRODUCTS = [
         "desc": "黑白渐变雾面，像画里走出来",
         "tags": ["艺术感"],
         "monthly_sales": 88,
-        "total": 20,
+        "total": 1,
     },
     {
         "id": "r08",
@@ -183,7 +206,7 @@ DEFAULT_PRODUCTS = [
         "desc": "夜色霓虹线条，酷感毕业照",
         "tags": ["小众"],
         "monthly_sales": 76,
-        "total": 14,
+        "total": 1,
     },
     {
         "id": "r09",
@@ -194,7 +217,7 @@ DEFAULT_PRODUCTS = [
         "desc": "蕾丝 + 珍珠排列，仪式感拉满",
         "tags": ["婚礼感"],
         "monthly_sales": 67,
-        "total": 12,
+        "total": 1,
     },
     {
         "id": "r10",
@@ -205,7 +228,7 @@ DEFAULT_PRODUCTS = [
         "desc": "水晶折射 + 流苏层次，灯光下很闪",
         "tags": ["限量"],
         "monthly_sales": 54,
-        "total": 10,
+        "total": 1,
     },
 ]
 
@@ -303,6 +326,10 @@ def enrich_product_images(prod: dict) -> dict:
 
 
 def merge_catalog_from_totals(totals: dict[str, object]) -> list[dict]:
+    scanned = build_catalog_from_images(CATEGORIES, totals)
+    if scanned:
+        save_catalog_meta_template(scanned)
+        return [enrich_product_images(p) for p in scanned]
     out: list[dict] = []
     for d in DEFAULT_PRODUCTS:
         row = enrich_product_images(dict(d))
@@ -556,6 +583,42 @@ def compute_rental_cost(start: date, end: date, qty: int) -> dict:
     return {"days": days, "rent": rent, "deposit": deposit, "total": rent + deposit}
 
 
+def rental_booking_count(product_id: str, bookings: list) -> int:
+    """非取消的租借订单笔数（用于展示「已订次数」）。"""
+    n = 0
+    for b in bookings:
+        if b.get("product_id") != product_id:
+            continue
+        if b.get("status") == "cancelled":
+            continue
+        if b.get("kind") != "rental":
+            continue
+        n += 1
+    return n
+
+
+def peak_booked_units(product_id: str, bookings: list, start: date, end: date) -> int:
+    """未来区间内单日同时占用的最大顶数（用于余量提示）。"""
+    peak = 0
+    for d in daterange(start, end):
+        used = 0
+        for b in bookings:
+            if b.get("product_id") != product_id:
+                continue
+            if b.get("status") == "cancelled":
+                continue
+            if b.get("kind") != "rental":
+                continue
+            bs = parse_date(b.get("start_date"))
+            be = parse_date(b.get("end_date"))
+            if not bs or not be:
+                continue
+            if bs <= d <= be:
+                used += int(b.get("quantity") or 1)
+        peak = max(peak, used)
+    return peak
+
+
 def inventory_snapshot(store: dict) -> list[dict]:
     products = store["products"]
     bookings = store["bookings"]
@@ -566,24 +629,9 @@ def inventory_snapshot(store: dict) -> list[dict]:
         if p.get("type") != "rental":
             continue
         total = int(p.get("total") or 0)
-        peak_booked = 0
-        for d in daterange(today, horizon_end):
-            used = 0
-            for b in bookings:
-                if b.get("product_id") != p["id"]:
-                    continue
-                if b.get("status") == "cancelled":
-                    continue
-                if b.get("kind") != "rental":
-                    continue
-                bs = parse_date(b.get("start_date"))
-                be = parse_date(b.get("end_date"))
-                if not bs or not be:
-                    continue
-                if bs <= d <= be:
-                    used += int(b.get("quantity") or 1)
-            peak_booked = max(peak_booked, used)
-        remaining = max(0, total - peak_booked)
+        booked_count = rental_booking_count(p["id"], bookings)
+        peak_used = peak_booked_units(p["id"], bookings, today, horizon_end)
+        remaining = max(0, total - peak_used)
         out.append(
             {
                 "id": p["id"],
@@ -593,7 +641,7 @@ def inventory_snapshot(store: dict) -> list[dict]:
                 "category_id": p.get("category_id"),
                 "desc": p.get("desc", ""),
                 "total": total,
-                "peak_booked": peak_booked,
+                "booked_count": booked_count,
                 "remaining_hint": remaining,
             }
         )
@@ -618,7 +666,7 @@ def group_products_by_category(products: list[dict]) -> list[tuple[dict, list[di
 def nav_active_key() -> str:
     ep = request.endpoint or ""
     if ep == "index":
-        return "home" if request.args.get("tab") == "home" else "menu"
+        return "menu"
     if ep in ("product_detail", "book_rental_page"):
         return "menu"
     if ep in ("cart_page", "cart_checkout_done", "orders_page", "order_detail"):
@@ -683,7 +731,11 @@ def create_app() -> Flask:
     import threading
 
     def _warm_images() -> None:
-        warm_catalog_images(DEFAULT_PRODUCTS, [FENGYE_IMAGE])
+        try:
+            products = build_catalog_from_images(CATEGORIES) or DEFAULT_PRODUCTS
+        except Exception:
+            products = DEFAULT_PRODUCTS
+        warm_catalog_images(products, [FENGYE_IMAGE])
 
     threading.Thread(target=_warm_images, daemon=True).start()
 
@@ -715,12 +767,6 @@ def create_app() -> Flask:
         }
 
     @app.route("/")
-    def welcome():
-        img = welcome_image_href()
-        if not img:
-            return redirect(url_for("index", tab="menu"))
-        return render_template("welcome.html", welcome_image=img)
-
     @app.route("/shop")
     def index():
         store = load_store()
@@ -792,6 +838,8 @@ def create_app() -> Flask:
 
         store["bookings"] = pending_bookings
         save_store(store)
+        new_orders = [b for b in pending_bookings if b.get("id") in created_ids]
+        notify_orders_async(new_orders, SHOP_NAME)
         save_cart([])
         flash(f"已生成 {len(created_ids)} 笔订单，请分别扫码支付。", "ok")
         return redirect(url_for("cart_checkout_done", ids=",".join(created_ids)))
@@ -950,6 +998,7 @@ def create_app() -> Flask:
         booking = build_booking(prod, start, end, qty, name, phone, addr, loc_note)
         store["bookings"].append(booking)
         save_store(store)
+        notify_orders_async([booking], SHOP_NAME)
         flash("预定已创建，请扫码支付。", "ok")
         return redirect(url_for("order_detail", bid=booking["id"]))
 
