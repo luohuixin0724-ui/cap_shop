@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ SHOP_NAME }} — 点单{% endblock %}
 {% block body %}
-<div id="top" class="shop-hero">
+{% if cover_image %}
+<div class="shop-cover" id="top">
+  <img
+    class="shop-cover-img"
+    src="{{ cover_image }}"
+    alt="{{ SHOP_NAME }} 封面"
+    width="750"
+    height="420"
+    decoding="async"
+    fetchpriority="high"
+  />
+</div>
+{% endif %}
+<div id="{% if not cover_image %}top{% else %}shop-info{% endif %}" class="shop-hero">
   <div class="shop-title-row">
     <div>
       <h1 class="shop-name">{{ SHOP_NAME }}</h1>

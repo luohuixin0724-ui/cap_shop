@@ -2,9 +2,9 @@
   "_help": "在此填写商品名称与分类。图片文件名须为 ch1_1.jpg、ch1_2.jpg（放在 static/img/img/）。category_id 可选：zan, miaoyin, chouxiang, zhonggong。也可建子文件夹如 static/img/img/zan/ch1_1.jpg",
   "products": {
     "ch1": {
-      "name": "春野粉簪",
+      "name": "春晓繁花",
       "category_id": "zan",
-      "desc": "侧簪层次丰富，粉调温柔出片",
+      "desc": "春日繁花簪花，层次饱满温柔出片",
       "tags": [
         "热销",
         "店长推荐"
@@ -12,56 +12,56 @@
       "total": 1
     },
     "ch2": {
-      "name": "铃兰垂丝",
+      "name": "蓝凰展翼",
       "category_id": "zan",
-      "desc": "垂坠铃兰造型，清新学院感",
+      "desc": "蓝调凰羽展翼造型，清冷又上镜",
       "tags": [
         "必租"
       ],
       "total": 1
     },
     "ch3": {
-      "name": "山茶绣球",
+      "name": "银鹤凌霄",
       "category_id": "zan",
-      "desc": "围边山茶 + 绣球体量感",
+      "desc": "银鹤凌空点缀，仙气学院感",
       "tags": [
         "上新"
       ],
       "total": 1
     },
     "ch4": {
-      "name": "银铃叮当",
+      "name": "流碧修竹",
+      "category_id": "zan",
+      "desc": "碧色竹韵流苏，清爽雅致",
+      "tags": [
+        "清新"
+      ],
+      "total": 1
+    },
+    "ch5": {
+      "name": "冷月皎翼",
+      "category_id": "zhonggong",
+      "desc": "冷月银饰与皎翼层次，重工仪式感",
+      "tags": [
+        "重工"
+      ],
+      "total": 1
+    },
+    "ch6": {
+      "name": "银丝松蝶",
       "category_id": "miaoyin",
-      "desc": "苗银流苏细节，行走有轻响",
+      "desc": "苗银丝线与松蝶细节，民族风十足",
       "tags": [
         "民族风"
       ],
       "total": 1
     },
-    "ch5": {
-      "name": "孔雀碧羽",
+    "ch7": {
+      "name": "暮紫流苏",
       "category_id": "miaoyin",
-      "desc": "碧色羽饰 + 银饰层次",
+      "desc": "暮紫色调流苏银饰，行走有韵味",
       "tags": [
         "出片"
-      ],
-      "total": 1
-    },
-    "ch6": {
-      "name": "红瑙璎珞",
-      "category_id": "miaoyin",
-      "desc": "玛瑙红珠璎珞，气场更足",
-      "tags": [
-        "重工银饰"
-      ],
-      "total": 1
-    },
-    "ch7": {
-      "name": "水墨雾面",
-      "category_id": "chouxiang",
-      "desc": "黑白渐变雾面，像画里走出来",
-      "tags": [
-        "艺术感"
       ],
       "total": 1
     }

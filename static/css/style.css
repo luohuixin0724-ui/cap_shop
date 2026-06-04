@@ -74,6 +74,20 @@ a {
   border-color: #bbf7d0;
 }
 
+.shop-cover {
+  margin: 0;
+  line-height: 0;
+  background: #1a1612;
+}
+
+.shop-cover-img {
+  display: block;
+  width: 100%;
+  max-height: min(52vh, 420px);
+  object-fit: cover;
+  object-position: center top;
+}
+
 .shop-hero {
   padding: 14px 14px 6px;
 }

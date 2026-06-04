@@ -115,85 +115,85 @@ CATEGORIES = [
 DEFAULT_PRODUCTS = [
     {
         "id": "r01",
-        "name": "春野粉簪",
+        "name": "春晓繁花",
         "type": "rental",
         "category_id": "zan",
         "image": "img/caps/ch1_1.jpg",
         "image_2": "img/caps/ch1_2.jpg",
-        "desc": "侧簪层次丰富，粉调温柔出片",
+        "desc": "春日繁花簪花，层次饱满温柔出片",
         "tags": ["热销", "店长推荐"],
         "monthly_sales": 186,
         "total": 1,
     },
     {
         "id": "r02",
-        "name": "铃兰垂丝",
+        "name": "蓝凰展翼",
         "type": "rental",
         "category_id": "zan",
         "image": "img/caps/ch2_1.jpg",
         "image_2": "img/caps/ch2_2.jpg",
-        "desc": "垂坠铃兰造型，清新学院感",
+        "desc": "蓝调凰羽展翼造型，清冷又上镜",
         "tags": ["必租"],
         "monthly_sales": 142,
         "total": 1,
     },
     {
         "id": "r03",
-        "name": "山茶绣球",
+        "name": "银鹤凌霄",
         "type": "rental",
         "category_id": "zan",
         "image": "img/caps/ch3_1.jpg",
         "image_2": "img/caps/ch3_2.jpg",
-        "desc": "围边山茶 + 绣球体量感",
+        "desc": "银鹤凌空点缀，仙气学院感",
         "tags": ["上新"],
         "monthly_sales": 96,
         "total": 1,
     },
     {
         "id": "r04",
-        "name": "银铃叮当",
+        "name": "流碧修竹",
         "type": "rental",
-        "category_id": "miaoyin",
+        "category_id": "zan",
         "image": "img/caps/ch4_1.jpg",
         "image_2": "img/caps/ch4_2.jpg",
-        "desc": "苗银流苏细节，行走有轻响",
-        "tags": ["民族风"],
+        "desc": "碧色竹韵流苏，清爽雅致",
+        "tags": ["清新"],
         "monthly_sales": 131,
         "total": 1,
     },
     {
         "id": "r05",
-        "name": "孔雀碧羽",
+        "name": "冷月皎翼",
         "type": "rental",
-        "category_id": "miaoyin",
+        "category_id": "zhonggong",
         "image": "img/caps/ch5_1.jpg",
         "image_2": "img/caps/ch5_2.jpg",
-        "desc": "碧色羽饰 + 银饰层次",
-        "tags": ["出片"],
+        "desc": "冷月银饰与皎翼层次，重工仪式感",
+        "tags": ["重工"],
         "monthly_sales": 118,
         "total": 1,
     },
     {
         "id": "r06",
-        "name": "红瑙璎珞",
+        "name": "银丝松蝶",
         "type": "rental",
         "category_id": "miaoyin",
         "image": "img/caps/ch6_1.jpg",
         "image_2": "img/caps/ch6_2.jpg",
-        "desc": "玛瑙红珠璎珞，气场更足",
-        "tags": ["重工银饰"],
+        "desc": "苗银丝线与松蝶细节，民族风十足",
+        "tags": ["民族风"],
         "monthly_sales": 104,
         "total": 1,
     },
     {
         "id": "r07",
-        "name": "水墨雾面",
+        "name": "暮紫流苏",
         "type": "rental",
-        "category_id": "chouxiang",
+        "category_id": "miaoyin",
         "image": "img/caps/ch7_1.jpg",
         "image_2": "img/caps/ch7_2.jpg",
-        "desc": "黑白渐变雾面，像画里走出来",
-        "tags": ["艺术感"],
+        "desc": "暮紫色调流苏银饰，行走有韵味",
+        "tags": ["出片"],
         "monthly_sales": 88,
         "total": 1,
     },
@@ -767,6 +767,12 @@ def create_app() -> Flask:
         }
 
     @app.route("/")
+    def welcome():
+        img = welcome_image_href()
+        if not img:
+            return redirect(url_for("index"))
+        return render_template("welcome.html", welcome_image=img)
+
     @app.route("/shop")
     def index():
         store = load_store()
@@ -782,6 +788,7 @@ def create_app() -> Flask:
             inv_map=inv_map,
             signature=signature,
             grouped=grouped,
+            cover_image=welcome_image_href(),
         )
 
     @app.route("/cart")
